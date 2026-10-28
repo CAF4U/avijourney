@@ -38,8 +38,17 @@ class _UniversalSearchSheet extends StatefulWidget {
 }
 
 class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
+  static const _examples = <String>[
+    'BAW12',
+    'G-EUYA',
+    'British Airways',
+    'LHR → LAX',
+    'JFK',
+    'A380 Emirates',
+  ];
   final _query = TextEditingController();
   List<SearchResult> _results = const [];
+  bool _hasSubmitted = false;
 
   @override
   void dispose() {
@@ -47,9 +56,15 @@ class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
     super.dispose();
   }
 
-  void _submit([String? value]) => setState(() {
-        _results = widget.controller.search(value ?? _query.text);
-      });
+  void _submit([String? value]) {
+    final query = value ?? _query.text;
+    _query.text = query;
+    _query.selection = TextSelection.collapsed(offset: query.length);
+    setState(() {
+      _hasSubmitted = true;
+      _results = widget.controller.search(query);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +100,11 @@ class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
       ),
       Expanded(
         child: _results.isEmpty
-            ? const Center(child: Text('Submit one search across AviJourney'))
+            ? _SearchGuidance(
+                hasSubmitted: _hasSubmitted,
+                examples: _examples,
+                onExampleSelected: _submit,
+              )
             : ListView(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                 children: [
@@ -100,6 +119,7 @@ class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
                       ),
                       ...grouped[type]!.map(_tile),
                     ],
+                  const _CatalogAttribution(),
                 ],
               ),
       ),
@@ -169,4 +189,72 @@ class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
         SearchResultType.route => 'ROUTES',
         SearchResultType.airport => 'AIRPORTS',
       };
+}
+
+class _SearchGuidance extends StatelessWidget {
+  const _SearchGuidance({
+    required this.hasSubmitted,
+    required this.examples,
+    required this.onExampleSelected,
+  });
+
+  final bool hasSubmitted;
+  final List<String> examples;
+  final ValueChanged<String> onExampleSelected;
+
+  @override
+  Widget build(BuildContext context) => SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(children: [
+          Icon(hasSubmitted ? Icons.search_off : Icons.travel_explore,
+              size: 44, color: Theme.of(context).colorScheme.primary),
+          const SizedBox(height: 12),
+          Text(
+            hasSubmitted
+                ? 'No matching results. Try another example.'
+                : 'Search live aircraft and flights, or discover airports and airlines worldwide.',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Live aircraft results use the current radar area. Airport and airline results come from the global discovery catalog.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 20),
+          const Text('TRY AN EXAMPLE',
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2)),
+          const SizedBox(height: 8),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
+            children: examples
+                .map((example) => ActionChip(
+                      key: Key('searchExample-$example'),
+                      label: Text(example),
+                      onPressed: () => onExampleSelected(example),
+                    ))
+                .toList(growable: false),
+          ),
+          const _CatalogAttribution(),
+        ]),
+      );
+}
+
+class _CatalogAttribution extends StatelessWidget {
+  const _CatalogAttribution();
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 20, bottom: 8),
+        child: Text(
+          'Airport data: OurAirports (Public Domain) · Airline data: OpenFlights (ODbL)',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      );
 }

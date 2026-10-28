@@ -15,6 +15,15 @@ Show AviJourney identity, development version, feed status and visible-aircraft 
 - Wider range reduces label density.
 - Selected target remains identifiable.
 - Trails are observed historical positions only.
+- North remains visibly indicated.
+- Tapping a target selects it and opens the existing Aircraft Detail surface.
+
+## Search
+
+Use one universal search field with tappable examples. Explain that live
+aircraft and flight results come from the current tracking area, while airport
+and airline discovery uses the bundled global catalogs. Catalog reference data
+must never be presented as schedule or flight-number verification.
 
 ## Map
 

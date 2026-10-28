@@ -54,6 +54,26 @@ void main() {
     expect(find.text('AIRCRAFT'), findsOneWidget);
   });
 
+  testWidgets('search guidance examples are clickable and discover globally',
+      (tester) async {
+    await tester.pumpWidget(
+        const AviJourneyApp(showMapTiles: false, useLiveData: false));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Search AviJourney'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('TRY AN EXAMPLE'), findsOneWidget);
+    expect(
+        find.textContaining('airports and airlines worldwide'), findsOneWidget);
+    final example = find.byKey(const Key('searchExample-JFK'));
+    await tester.ensureVisible(example);
+    await tester.tap(example);
+    await tester.pumpAndSettle();
+
+    expect(find.text('AIRPORTS'), findsOneWidget);
+    expect(find.textContaining('John F. Kennedy'), findsOneWidget);
+  });
+
   testWidgets('Radar Cards and Saved navigation continues to share state',
       (tester) async {
     await tester.pumpWidget(

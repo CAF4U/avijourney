@@ -57,7 +57,8 @@ Fast-changing surveillance data: ICAO24, callsign, position, altitude, speed, tr
 Slow-changing identity: registration, type, model, manufacturer and operator.
 
 ### FlightRoute
-Journey information: callsign, verified commercial number if known, origin, destination and provenance.
+Route enrichment only: callsign, origin, destination and provenance. It never
+contains or verifies a passenger commercial flight number.
 
 ### Airport
 ICAO, IATA, name, city, country and coordinates where available.
@@ -86,8 +87,10 @@ reliable credential-free schedule source is selected.
 
 Universal search is a submit-driven application service. It token-normalizes a
 single query and searches the current shared aircraft snapshot, flight/route
-data, HexDB enrichment, the embedded airport catalog and static airline
-metadata. Widgets neither query providers nor issue requests on keystrokes.
+data and HexDB enrichment. In parallel it searches bundled global airport and
+airline catalogs that are not constrained by the tracking centre/radar range.
+Widgets neither query providers nor issue requests on keystrokes. Catalog
+providers initialize before the first refresh and fall back locally on failure.
 
 `FollowedItem` stores a type (`aircraft`, `flight`, `airline`, `route` or
 `airport`), stable identifier and display metadata. The local preferences store

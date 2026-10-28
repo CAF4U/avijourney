@@ -25,6 +25,8 @@ V0.3 is complete only when the critical criteria pass on a real Android device.
 - [ ] Tap range indicator for 20 / 80 / 140 / 200 NM.
 - [ ] Wider ranges reduce clutter.
 - [ ] Trails contain observed positions only.
+- [ ] North is visibly indicated.
+- [ ] Tapping an aircraft target opens Aircraft Detail.
 
 ## Map
 
@@ -54,6 +56,9 @@ V0.3 is complete only when the critical criteria pass on a real Android device.
 - [ ] Search and altitude filters work.
 - [ ] Trails/labels/saved-only controls work.
 - [ ] Saved aircraft survive restart.
+- [ ] Search guidance includes tappable examples.
+- [ ] Airport and airline discovery is global and independent of radar range.
+- [ ] Live aircraft/flight results remain limited to acquired live state.
 
 ## Quality gates
 

@@ -12,6 +12,7 @@ import '../data/local/static_airline_catalog.dart';
 import 'search/universal_search_service.dart';
 import '../domain/models/tracking_center.dart';
 import '../domain/providers/airport_search_provider.dart';
+import '../domain/providers/airline_search_provider.dart';
 import '../domain/providers/device_location_provider.dart';
 import '../domain/repositories/aircraft_repository.dart';
 import 'persistence/app_preferences_store.dart';
@@ -25,6 +26,7 @@ class AppController extends ChangeNotifier {
     AppPreferencesStore preferencesStore = const NoOpAppPreferencesStore(),
     DeviceLocationProvider? deviceLocationProvider,
     AirportSearchProvider? airportSearchProvider,
+    AirlineSearchProvider airlineSearchProvider = const StaticAirlineCatalog(),
     this.feedName = 'OpenSky',
     UniversalSearchService searchService = const UniversalSearchService(),
   })  : _repository = repository,
@@ -32,6 +34,7 @@ class AppController extends ChangeNotifier {
         _preferencesStore = preferencesStore,
         _deviceLocationProvider = deviceLocationProvider,
         _airportSearchProvider = airportSearchProvider,
+        _airlineSearchProvider = airlineSearchProvider,
         _searchService = searchService;
 
   static const minimumRefreshInterval = Duration(seconds: 30);
@@ -39,6 +42,7 @@ class AppController extends ChangeNotifier {
   final AppPreferencesStore _preferencesStore;
   final DeviceLocationProvider? _deviceLocationProvider;
   final AirportSearchProvider? _airportSearchProvider;
+  final AirlineSearchProvider _airlineSearchProvider;
   final UniversalSearchService _searchService;
   final String feedName;
   TrackingCenter _trackingCenter;
@@ -75,6 +79,12 @@ class AppController extends ChangeNotifier {
       }).toList(growable: false);
 
   Future<void> initialize() async {
+    try {
+      await _airportSearchProvider?.initialize();
+      await _airlineSearchProvider.initialize();
+    } catch (_) {
+      // Discovery catalog failure must not prevent the live app shell.
+    }
     try {
       final persisted = await _preferencesStore.load();
       if (persisted != null) {
@@ -225,8 +235,8 @@ class AppController extends ChangeNotifier {
   List<SearchResult> search(String query) => _searchService.search(
         query: query,
         aircraft: _aircraft,
-        airlines: StaticAirlineCatalog.airlines,
-        airports: searchAirports(''),
+        airlines: _airlineSearchProvider.airlines,
+        airports: searchAirports(query),
       );
 
   Future<void> chooseAirport(Airport airport) async {

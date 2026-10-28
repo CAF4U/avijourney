@@ -109,7 +109,26 @@ class StaticAirportSearchProvider implements AirportSearchProvider {
         country: 'NL',
         latitude: 52.3105,
         longitude: 4.7683),
+    Airport(
+        icao: 'KJFK',
+        iata: 'JFK',
+        name: 'John F. Kennedy International Airport',
+        city: 'New York',
+        country: 'US',
+        latitude: 40.639447,
+        longitude: -73.779317),
+    Airport(
+        icao: 'KLAX',
+        iata: 'LAX',
+        name: 'Los Angeles International Airport',
+        city: 'Los Angeles',
+        country: 'US',
+        latitude: 33.942501,
+        longitude: -118.407997),
   ];
+
+  @override
+  Future<void> initialize() async {}
 
   @override
   List<Airport> search(String query) {

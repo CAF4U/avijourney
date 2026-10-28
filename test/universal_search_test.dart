@@ -46,7 +46,7 @@ void main() {
       const UniversalSearchService().search(
         query: query,
         aircraft: [aircraft],
-        airlines: StaticAirlineCatalog.airlines,
+        airlines: StaticAirlineCatalog.entries,
         airports: StaticAirportSearchProvider.airports,
       );
 

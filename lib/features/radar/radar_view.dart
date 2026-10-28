@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../app/app_controller.dart';
 import '../../domain/models/tracked_aircraft.dart';
 import '../../domain/models/tracking_center.dart';
+import '../aircraft_detail/aircraft_detail_sheet.dart';
 
 class RadarView extends StatelessWidget {
   const RadarView({
@@ -26,6 +27,7 @@ class RadarView extends StatelessWidget {
             child: SizedBox.square(
               dimension: size,
               child: CustomPaint(
+                key: const Key('radarCanvas'),
                 painter: RadarPainter(
                   aircraft: controller.visibleAircraft,
                   selectedIcao24: controller.selectedIcao24,
@@ -35,12 +37,37 @@ class RadarView extends StatelessWidget {
                   trackingCenter: controller.trackingCenter,
                 ),
                 child: GestureDetector(
-                  onTapUp: (details) => _selectNearest(
-                    details.localPosition,
-                    Size.square(size),
-                  ),
+                  behavior: HitTestBehavior.opaque,
+                  onTapUp: (details) {
+                    final aircraft = _nearestAircraft(
+                      details.localPosition,
+                      Size.square(size),
+                    );
+                    if (aircraft == null) {
+                      controller.select(null);
+                      return;
+                    }
+                    controller.select(aircraft.state.icao24);
+                    showAircraftDetail(context, aircraft, controller);
+                  },
                 ),
               ),
+            ),
+          ),
+          const Positioned(
+            key: Key('radarNorthIndicator'),
+            top: 10,
+            left: 0,
+            right: 0,
+            child: IgnorePointer(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Text('N',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.4)),
+                Icon(Icons.north, size: 17),
+              ]),
             ),
           ),
           Positioned(
@@ -82,7 +109,7 @@ class RadarView extends StatelessWidget {
         ]);
       });
 
-  void _selectNearest(Offset tap, Size size) {
+  TrackedAircraft? _nearestAircraft(Offset tap, Size size) {
     final radius = size.shortestSide / 2;
     TrackedAircraft? nearest;
     var distance = 28.0;
@@ -95,7 +122,7 @@ class RadarView extends StatelessWidget {
         nearest = aircraft;
       }
     }
-    controller.select(nearest?.state.icao24);
+    return nearest;
   }
 }
 

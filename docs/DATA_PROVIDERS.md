@@ -88,3 +88,20 @@ keystroke. External flight lookup caching remains at the provider boundary.
 Aircraft, flights, airlines, routes and airports can be followed through a
 provider-independent typed identifier stored locally. Following does not imply
 notifications, cloud sync or a provider subscription.
+
+### Global discovery catalogs
+
+Airport and airline discovery is deliberately separate from the current
+OpenSky tracking radius. The APK bundles 4,000+ scheduled-service airports from
+[OurAirports](https://ourairports.com/data/) (Public Domain) and 1,200+ coded
+airline records from [OpenFlights](https://openflights.org/data.php) (ODbL).
+Catalog load failure falls back to the smaller built-in catalog and never
+blocks the app shell. These reference catalogs do not verify schedules, current
+operation or commercial flight numbers.
+
+The full commercial identity provider review, costs, licensing concerns and
+future verification contract are documented in
+[`FLIGHT_IDENTITY_PROVIDER_EVALUATION.md`](FLIGHT_IDENTITY_PROVIDER_EVALUATION.md).
+No deployable provider currently satisfies both the correlation and Android
+credential/licensing requirements, so production enrichment remains unresolved
+and the callsign remains primary.

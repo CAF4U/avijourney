@@ -24,3 +24,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/data/global_airports.tsv
+    - assets/data/global_airlines.tsv

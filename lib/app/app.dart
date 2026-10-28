@@ -4,7 +4,10 @@ import 'package:http/http.dart' as http;
 import '../core/theme/app_theme.dart';
 import '../data/hexdb/hexdb_aircraft_enrichment_provider.dart';
 import '../data/local/shared_preferences_app_store.dart';
+import '../data/local/bundled_airport_search_provider.dart';
+import '../data/local/bundled_airline_search_provider.dart';
 import '../data/local/static_airport_search_provider.dart';
+import '../data/local/static_airline_catalog.dart';
 import '../data/location/geolocator_device_location_provider.dart';
 import '../data/mapping/open_street_map_tile_source.dart';
 import '../data/mock/mock_aircraft_provider.dart';
@@ -58,6 +61,7 @@ class _AviJourneyAppState extends State<AviJourneyApp>
           enrichment: const MockAircraftEnrichmentProvider(),
         ),
         airportSearchProvider: const StaticAirportSearchProvider(),
+        airlineSearchProvider: const StaticAirlineCatalog(),
         feedName: 'Mock feed',
       );
     }
@@ -73,7 +77,8 @@ class _AviJourneyAppState extends State<AviJourneyApp>
       ),
       preferencesStore: const SharedPreferencesAppStore(),
       deviceLocationProvider: const GeolocatorDeviceLocationProvider(),
-      airportSearchProvider: const StaticAirportSearchProvider(),
+      airportSearchProvider: BundledAirportSearchProvider(),
+      airlineSearchProvider: BundledAirlineSearchProvider(),
       feedName: 'OpenSky + HexDB',
     );
   }
