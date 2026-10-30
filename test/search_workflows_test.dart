@@ -72,7 +72,7 @@ void main() {
 
   testWidgets('airport result opens details and recentres radar and map',
       (tester) async {
-    final app = controller(global: true);
+    final app = controller();
     final viewport =
         MapViewportController(MapViewport.around(TrackingCenter.heathrow));
     addTearDown(app.dispose);
@@ -80,6 +80,7 @@ void main() {
     await tester.pumpWidget(AviJourneyApp(
         controller: app, mapViewportController: viewport, showMapTiles: false));
     await tester.pumpAndSettle();
+    app.pause();
     app.setDisplayFilter(
         const AircraftFilter(label: 'old filter', query: 'BAW12'));
     await tester.tap(find.byTooltip('Search aircraft, airlines and airports'));
@@ -110,6 +111,7 @@ void main() {
     await tester
         .pumpWidget(AviJourneyApp(controller: app, showMapTiles: false));
     await tester.pumpAndSettle();
+    app.pause();
     await tester.tap(find.byTooltip('Search aircraft, airlines and airports'));
     await tester.pumpAndSettle();
     await tester.enterText(

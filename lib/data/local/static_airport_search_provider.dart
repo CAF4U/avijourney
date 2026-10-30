@@ -118,6 +118,14 @@ class StaticAirportSearchProvider implements AirportSearchProvider {
         latitude: 40.639447,
         longitude: -73.779317),
     Airport(
+        icao: 'KLGA',
+        iata: 'LGA',
+        name: 'LaGuardia Airport',
+        city: 'New York',
+        country: 'US',
+        latitude: 40.777199,
+        longitude: -73.872597),
+    Airport(
         icao: 'KLAX',
         iata: 'LAX',
         name: 'Los Angeles International Airport',
@@ -136,9 +144,12 @@ class StaticAirportSearchProvider implements AirportSearchProvider {
     if (normalized.isEmpty) return airports;
     return airports.where((airport) {
       final values = [airport.iata, airport.icao, airport.name, airport.city];
-      return values
-          .whereType<String>()
-          .any((value) => value.toLowerCase().contains(normalized));
+      return values.whereType<String>().any((value) =>
+          value.toLowerCase().contains(normalized) ||
+          value
+              .toLowerCase()
+              .replaceAll(RegExp(r'\s+'), '')
+              .contains(normalized.replaceAll(RegExp(r'\s+'), '')));
     }).toList(growable: false);
   }
 }
