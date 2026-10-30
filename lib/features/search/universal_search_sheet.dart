@@ -65,6 +65,7 @@ class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
 
   void _submit([String? value]) {
     final query = value ?? _query.text;
+    FocusScope.of(context).unfocus();
     _query.text = query;
     _query.selection = TextSelection.collapsed(offset: query.length);
     setState(() {

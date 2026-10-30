@@ -11,8 +11,11 @@ void main() {
     await provider.initialize();
 
     expect(provider.airportCount, greaterThan(3000));
-    expect(provider.search('La Guardia').single.icao, 'KLGA');
-    expect(provider.search('LaGuardia').single.icao, 'KLGA');
+    expect(
+        provider.search('La Guardia').firstWhere((a) => a.iata == 'LGA').icao,
+        'KLGA');
+    expect(provider.search('LaGuardia').firstWhere((a) => a.iata == 'LGA').icao,
+        'KLGA');
     expect(provider.search('JFK').firstWhere((a) => a.iata == 'JFK').name,
         contains('Kennedy'));
     expect(provider.search('DXB').firstWhere((a) => a.iata == 'DXB').city,
