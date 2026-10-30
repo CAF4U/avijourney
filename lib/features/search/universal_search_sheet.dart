@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_controller.dart';
 import '../../domain/models/airline.dart';
+import '../../domain/models/aircraft_filter.dart';
 import '../../domain/models/airport.dart';
 import '../../domain/models/followed_item.dart';
 import '../../domain/models/search_result.dart';
@@ -13,6 +14,7 @@ Future<void> showUniversalSearch(
   BuildContext context,
   AppController controller, {
   required VoidCallback onShowOnMap,
+  required ValueChanged<Airport> onTrackAirport,
 }) =>
     showModalBottomSheet<void>(
       context: context,
@@ -23,15 +25,19 @@ Future<void> showUniversalSearch(
         child: _UniversalSearchSheet(
           controller: controller,
           onShowOnMap: onShowOnMap,
+          onTrackAirport: onTrackAirport,
         ),
       ),
     );
 
 class _UniversalSearchSheet extends StatefulWidget {
   const _UniversalSearchSheet(
-      {required this.controller, required this.onShowOnMap});
+      {required this.controller,
+      required this.onShowOnMap,
+      required this.onTrackAirport});
   final AppController controller;
   final VoidCallback onShowOnMap;
+  final ValueChanged<Airport> onTrackAirport;
 
   @override
   State<_UniversalSearchSheet> createState() => _UniversalSearchSheetState();
@@ -49,6 +55,7 @@ class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
   final _query = TextEditingController();
   List<SearchResult> _results = const [];
   bool _hasSubmitted = false;
+  String _submittedQuery = "";
 
   @override
   void dispose() {
@@ -62,6 +69,7 @@ class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
     _query.selection = TextSelection.collapsed(offset: query.length);
     setState(() {
       _hasSubmitted = true;
+      _submittedQuery = query.trim();
       _results = widget.controller.search(query);
     });
   }
@@ -98,6 +106,17 @@ class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
               icon: const Icon(Icons.close)),
         ]),
       ),
+      if (_hasSubmitted && _submittedQuery.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: FilledButton.icon(
+            key: const Key('filterSearchResults'),
+            onPressed: () => _applyFilter(AircraftFilter(
+                label: 'Search: $_submittedQuery', query: _submittedQuery)),
+            icon: const Icon(Icons.filter_alt),
+            label: const Text('Filter radar / map by this search'),
+          ),
+        ),
       Expanded(
         child: _results.isEmpty
             ? _SearchGuidance(
@@ -133,33 +152,150 @@ class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
         title: Text(result.title),
         subtitle: Text('${result.subtitle}\n${result.matchReason}'),
         isThreeLine: true,
-        trailing: IconButton(
-          tooltip: followed != null && widget.controller.isFollowing(followed)
-              ? 'Unfollow'
-              : 'Follow',
-          onPressed: followed == null
-              ? null
-              : () =>
-                  setState(() => widget.controller.toggleFollowed(followed)),
-          icon: Icon(followed != null && widget.controller.isFollowing(followed)
-              ? Icons.bookmark
-              : Icons.bookmark_border),
-        ),
+        trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+          IconButton(
+              tooltip: 'Filter radar / map',
+              icon: const Icon(Icons.filter_alt_outlined),
+              onPressed: () => _showResultActions(result)),
+          IconButton(
+            tooltip: followed != null && widget.controller.isFollowing(followed)
+                ? 'Unfollow'
+                : 'Follow',
+            onPressed: followed == null
+                ? null
+                : () =>
+                    setState(() => widget.controller.toggleFollowed(followed)),
+            icon: Icon(
+                followed != null && widget.controller.isFollowing(followed)
+                    ? Icons.bookmark
+                    : Icons.bookmark_border),
+          ),
+        ]),
         onTap: () {
           final tracked = result.value;
-          if (tracked is TrackedAircraft) {
+          if (tracked is TrackedAircraft &&
+              result.type != SearchResultType.route) {
             if (result.type == SearchResultType.flight) {
               showFlightDetail(context, tracked, widget.controller,
-                  onShowOnMap: widget.onShowOnMap);
+                  onShowOnMap: () {
+                Navigator.pop(context);
+                widget.onShowOnMap();
+              });
             } else {
               widget.controller.select(tracked.state.icao24);
               showAircraftDetail(context, tracked, widget.controller);
             }
+          } else {
+            _showResultActions(result);
           }
         },
       ),
     );
   }
+
+  void _applyFilter(AircraftFilter filter) {
+    widget.controller.setDisplayFilter(filter);
+    Navigator.pop(context);
+  }
+
+  void _showResultActions(SearchResult result) {
+    final value = result.value;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (detailContext) {
+        void filter(AircraftFilter selected) {
+          Navigator.pop(detailContext);
+          _applyFilter(selected);
+        }
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(children: [
+                  Expanded(
+                      child: Text(result.title,
+                          style: Theme.of(context).textTheme.titleLarge)),
+                  IconButton(
+                      tooltip: 'Close details',
+                      onPressed: () => Navigator.pop(detailContext),
+                      icon: const Icon(Icons.close)),
+                ]),
+                Text(result.subtitle),
+                const SizedBox(height: 12),
+                if (value is Airport) ...[
+                  Text(
+                      'ICAO: ${value.icao} · IATA: ${value.iata ?? "Unavailable"}'),
+                  Text(
+                      'Coordinates: ${value.latitude ?? "Unavailable"}, ${value.longitude ?? "Unavailable"}'),
+                  const Text(
+                      'Airport reference data · OurAirports. Route filters use known routes in the current tracking area.'),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    key: const Key('trackSelectedAirport'),
+                    onPressed: value.latitude == null || value.longitude == null
+                        ? null
+                        : () {
+                            Navigator.pop(detailContext);
+                            Navigator.pop(context);
+                            widget.onTrackAirport(value);
+                          },
+                    icon: const Icon(Icons.radar),
+                    label: const Text('Track around this airport'),
+                  ),
+                  for (final direction in AirportDirection.values)
+                    OutlinedButton(
+                        onPressed: () => filter(AircraftFilter(
+                            label:
+                                '${_directionLabel(direction)} ${value.displayCode}',
+                            airport: value,
+                            direction: direction)),
+                        child:
+                            Text('${_directionLabel(direction)} this airport')),
+                ] else if (value is Airline) ...[
+                  Text(
+                      'ICAO: ${value.icaoCode ?? "Unavailable"} · IATA: ${value.iataCode ?? "Unavailable"}'),
+                  const Text(
+                      'Airline reference data · OpenFlights. Matches known airline metadata or operational ICAO callsign prefix; does not verify a commercial flight number.'),
+                  FilledButton(
+                      onPressed: () => filter(AircraftFilter(
+                          label: 'Airline: ${value.name}', airline: value)),
+                      child: const Text('Filter radar / map by this airline')),
+                ] else if (value is TrackedAircraft) ...[
+                  if (result.type == SearchResultType.route)
+                    FilledButton(
+                        onPressed: () => filter(AircraftFilter(
+                            label: 'Route: ${result.title}',
+                            routeOrigin:
+                                value.flight?.origin ?? value.route?.origin,
+                            routeDestination: value.flight?.destination ??
+                                value.route?.destination)),
+                        child: const Text('Filter radar / map by this route'))
+                  else
+                    FilledButton(
+                        onPressed: () => filter(AircraftFilter(
+                            label: 'Aircraft: ${result.title}',
+                            icao24: value.state.icao24)),
+                        child: const Text('Show only this aircraft')),
+                ],
+                const SizedBox(height: 8),
+                const Text(
+                    'Filters apply to acquired aircraft only and replace the previous search filter. Other settings still apply.'),
+              ]),
+        );
+      },
+    );
+  }
+
+  String _directionLabel(AirportDirection direction) => switch (direction) {
+        AirportDirection.either => 'From or to',
+        AirportDirection.origin => 'From',
+        AirportDirection.destination => 'To',
+      };
 
   FollowedItem? _followed(SearchResult result) {
     final type = switch (result.type) {

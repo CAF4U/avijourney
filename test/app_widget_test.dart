@@ -8,7 +8,7 @@ void main() {
     await tester.pumpWidget(
         const AviJourneyApp(showMapTiles: false, useLiveData: false));
     await tester.pumpAndSettle();
-    expect(find.text('AVIJOURNEY'), findsOneWidget);
+    expect(find.text('CAF4U Aircraft Companion'), findsOneWidget);
     expect(find.text('20 NM'), findsOneWidget);
     expect(find.textContaining('CENTER · LONDON HEATHROW'), findsOneWidget);
     await tester.tap(find.byKey(const Key('rangeBadge')));
@@ -42,7 +42,7 @@ void main() {
     await tester.pumpWidget(
         const AviJourneyApp(showMapTiles: false, useLiveData: false));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Search AviJourney'));
+    await tester.tap(find.byTooltip('Search aircraft, airlines and airports'));
     await tester.pumpAndSettle();
     await tester.enterText(
         find.byKey(const Key('universalSearchField')), 'BAW12');
@@ -59,7 +59,7 @@ void main() {
     await tester.pumpWidget(
         const AviJourneyApp(showMapTiles: false, useLiveData: false));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Search AviJourney'));
+    await tester.tap(find.byTooltip('Search aircraft, airlines and airports'));
     await tester.pumpAndSettle();
 
     expect(find.text('TRY AN EXAMPLE'), findsOneWidget);

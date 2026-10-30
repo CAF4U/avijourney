@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../app/app_controller.dart';
+import '../../domain/models/airport.dart';
 import '../../app/mapping/map_tile_source.dart';
 import '../../app/mapping/map_viewport_controller.dart';
 import '../cards/aircraft_cards_view.dart';
@@ -69,30 +72,34 @@ class _HomeShellState extends State<HomeShell> {
             title: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('AVIJOURNEY',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w800, letterSpacing: 1.8)),
+                  Text('CAF4U Aircraft Companion',
+                      maxLines: 2,
+                      style:
+                          TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                   Text('V0.3.0 · DEVELOPMENT',
                       style: TextStyle(fontSize: 10, letterSpacing: 1.2)),
                 ]),
             actions: [
               IconButton(
-                tooltip: 'Search AviJourney',
+                tooltip: 'Search aircraft, airlines and airports',
                 onPressed: () => showUniversalSearch(
                   context,
                   widget.controller,
-                  onShowOnMap: () => setState(() => _index = 1),
+                  onShowOnMap: _showSelectedAircraftOnMap,
+                  onTrackAirport: _trackAirport,
                 ),
                 icon: const Icon(Icons.search),
               ),
               _StatusBadge(
                   status: widget.controller.feedStatus,
-                  feedName: widget.controller.feedName),
-              Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Center(
-                      child: Text(
-                          '${widget.controller.visibleAircraft.length} visible'))),
+                  feedName: widget.controller.feedName,
+                  compact: MediaQuery.sizeOf(context).width < 600),
+              if (MediaQuery.sizeOf(context).width >= 600)
+                Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Center(
+                        child: Text(
+                            '${widget.controller.visibleAircraft.length} visible'))),
               IconButton(
                   tooltip: 'Filters and settings',
                   onPressed: () => showSettingsSheet(
@@ -103,6 +110,26 @@ class _HomeShellState extends State<HomeShell> {
                   icon: const Icon(Icons.tune)),
             ],
           ),
+          bottomSheet: widget.controller.displayFilter == null
+              ? null
+              : SafeArea(
+                  child: Material(
+                      child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Row(children: [
+                      const Icon(Icons.filter_alt),
+                      const SizedBox(width: 8),
+                      Expanded(
+                          child: Text(
+                              '${widget.controller.displayFilter!.label} · ${widget.controller.visibleAircraft.length} matching in tracking area')),
+                      TextButton(
+                          key: const Key('clearDisplayFilter'),
+                          onPressed: () =>
+                              widget.controller.setDisplayFilter(null),
+                          child: const Text('Clear filter')),
+                    ]),
+                  )),
+                ),
           body: SafeArea(
             child: wide
                 ? Row(children: [
@@ -134,6 +161,28 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
+  void _showSelectedAircraftOnMap() {
+    final selected = widget.controller.aircraft
+        .where((item) => item.state.icao24 == widget.controller.selectedIcao24)
+        .firstOrNull;
+    if (selected != null) {
+      widget.mapViewportController.update(MapViewport(
+          latitude: selected.state.latitude,
+          longitude: selected.state.longitude,
+          zoom: 10));
+    }
+    setState(() => _index = 1);
+  }
+
+  void _trackAirport(Airport airport) {
+    widget.controller.setDisplayFilter(null);
+    // chooseAirport updates the tracking centre synchronously before acquisition.
+    unawaited(widget.controller.chooseAirport(airport));
+    widget.mapViewportController
+        .update(MapViewport.around(widget.controller.trackingCenter));
+    if (_index > 1) setState(() => _index = 0);
+  }
+
   void _showMapForCenterSelection() => setState(() => _index = 1);
 
   void _openTrackingLocation() => showTrackingLocationSheet(
@@ -144,7 +193,9 @@ class _HomeShellState extends State<HomeShell> {
 }
 
 class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.status, required this.feedName});
+  const _StatusBadge(
+      {required this.status, required this.feedName, this.compact = false});
+  final bool compact;
   final FeedStatus status;
   final String feedName;
 
@@ -165,7 +216,7 @@ class _StatusBadge extends StatelessWidget {
                 border:
                     Border.all(color: Theme.of(context).colorScheme.primary),
                 borderRadius: BorderRadius.circular(20)),
-            child: Text(label,
+            child: Text(compact ? status.name.toUpperCase() : label,
                 style: const TextStyle(
                     fontSize: 10, fontWeight: FontWeight.bold))));
   }

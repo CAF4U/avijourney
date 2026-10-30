@@ -1,6 +1,6 @@
 # Codex Start Prompt
 
-You are implementing **AviJourney V0.3**, a clean Flutter/Dart rebuild of the proven Tauri aircraft-tracking prototype in `Hugo-Doswald/flightscope-prototype`.
+You are implementing **CAF4U Aircraft Companion V0.3**, a clean Flutter/Dart rebuild of the proven Tauri aircraft-tracking prototype in `Hugo-Doswald/flightscope-prototype`.
 
 Read in order:
 

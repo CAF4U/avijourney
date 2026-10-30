@@ -30,6 +30,7 @@ class UniversalSearchService {
           : null;
       final common = <String?>[
         callsign,
+        tracked.state.icao24,
         tracked.identity?.registration,
         tracked.identity?.model,
         tracked.identity?.typeCode,
@@ -101,8 +102,17 @@ class UniversalSearchService {
       }
     }
     for (final airport in airports) {
-      if (_matches(
-          tokens, [airport.iata, airport.icao, airport.name, airport.city])) {
+      if (_matches(tokens,
+              [airport.iata, airport.icao, airport.name, airport.city]) ||
+          [
+            airport.iata,
+            airport.icao,
+            airport.name,
+            airport.city
+          ].whereType<String>().any((field) => field
+              .toUpperCase()
+              .replaceAll(RegExp(r'\s+'), '')
+              .contains(query.toUpperCase().replaceAll(RegExp(r'\s+'), '')))) {
         results.add(SearchResult(
           type: SearchResultType.airport,
           identifier: airport.icao,

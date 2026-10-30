@@ -1,4 +1,4 @@
-# AviJourney V0.3 UX Requirements
+# CAF4U Aircraft Companion V0.3 UX Requirements
 
 ## Navigation
 
@@ -6,7 +6,7 @@ Primary portrait navigation: Radar, Map, Cards, Saved. Landscape may adapt place
 
 ## Header
 
-Show AviJourney identity, development version, feed status and visible-aircraft count. OpenSky is a provider, not the product brand.
+Show CAF4U Aircraft Companion identity, development version, feed status and visible-aircraft count. OpenSky is a provider, not the product brand.
 
 ## Radar
 

@@ -1,4 +1,4 @@
-# AviJourney V0.3 Acceptance Criteria
+# CAF4U Aircraft Companion V0.3 Acceptance Criteria
 
 V0.3 is complete only when the critical criteria pass on a real Android device.
 

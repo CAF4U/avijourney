@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../core/errors/provider_exception.dart';
 import '../domain/models/airport.dart';
+import '../domain/models/aircraft_filter.dart';
 import '../domain/models/app_settings.dart';
 import '../domain/models/tracked_aircraft.dart';
 import '../domain/models/followed_item.dart';
@@ -71,12 +72,33 @@ class AppController extends ChangeNotifier {
   bool get isChoosingCenterOnMap => _isChoosingCenterOnMap;
   String? get locationMessage => _locationMessage;
 
-  List<TrackedAircraft> get visibleAircraft => _aircraft.where((aircraft) {
-        final altitude = aircraft.state.altitudeFeet;
-        return altitude >= _settings.minimumAltitudeFeet &&
-            altitude <= _settings.maximumAltitudeFeet &&
-            (!_settings.savedOnly || _saved.contains(aircraft.state.icao24));
-      }).toList(growable: false);
+  AircraftFilter? _displayFilter;
+  AircraftFilter? get displayFilter => _displayFilter;
+
+  void setDisplayFilter(AircraftFilter? filter) {
+    _displayFilter = filter;
+    notifyListeners();
+  }
+
+  List<TrackedAircraft> get visibleAircraft {
+    final filter = _displayFilter;
+    final queryMatches = filter?.query == null
+        ? <String>{}
+        : search(filter!.query!)
+            .where((r) => r.type == SearchResultType.aircraft)
+            .map((r) => r.identifier.toUpperCase())
+            .toSet();
+    return _aircraft.where((aircraft) {
+      final altitude = aircraft.state.altitudeFeet;
+      return altitude >= _settings.minimumAltitudeFeet &&
+          altitude <= _settings.maximumAltitudeFeet &&
+          (!_settings.savedOnly || _saved.contains(aircraft.state.icao24)) &&
+          (filter == null ||
+              filter.matches(aircraft,
+                  matchesQuery: queryMatches
+                      .contains(aircraft.state.icao24.toUpperCase())));
+    }).toList(growable: false);
+  }
 
   Future<void> initialize() async {
     try {
@@ -128,11 +150,13 @@ class AppController extends ChangeNotifier {
       notifyListeners();
     }
     try {
+      final requestedCenter = _trackingCenter;
       final result = await _repository.loadNearby(
         centerLatitude: _trackingCenter.latitude,
         centerLongitude: _trackingCenter.longitude,
         radiusNauticalMiles: _settings.radarRangeNm.toDouble(),
       );
+      if (!identical(requestedCenter, _trackingCenter)) return;
       _aircraft = _mergeObservedHistory(result);
       _feedStatus = FeedStatus.live;
     } on ProviderException catch (error) {
@@ -192,6 +216,7 @@ class AppController extends ChangeNotifier {
 
   Future<void> setTrackingCenter(TrackingCenter center) async {
     _trackingCenter = center;
+    _aircraft = const [];
     _isChoosingCenterOnMap = false;
     _locationMessage = null;
     notifyListeners();

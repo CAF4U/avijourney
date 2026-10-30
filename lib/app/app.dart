@@ -112,7 +112,7 @@ class _AviJourneyAppState extends State<AviJourneyApp>
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'AviJourney',
+      title: 'CAF4U Aircraft Companion',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark(),
       home: HomeShell(
