@@ -40,45 +40,23 @@ AircraftRoute? detailRoute(TrackedAircraft aircraft, AppController controller) {
           destination: controller.airportDetails(destination));
 }
 
-class AirportDetailPage extends StatefulWidget {
+class AirportDetailPage extends StatelessWidget {
   const AirportDetailPage(
       {required this.airport, required this.controller, super.key});
   final Airport airport;
   final AppController controller;
-  @override
-  State<AirportDetailPage> createState() => _AirportDetailPageState();
-}
-
-class _AirportDetailPageState extends State<AirportDetailPage> {
-  AirportTraffic? _traffic;
-  String _query = '';
-  final _focus = FocusNode();
-  final _search = TextEditingController();
-  @override
-  void dispose() {
-    _focus.dispose();
-    _search.dispose();
-    super.dispose();
-  }
-
-  void _show(AirportTraffic traffic, {bool find = false}) {
-    setState(() {
-      _traffic = traffic;
-      _query = '';
-      _search.clear();
-    });
-    if (find)
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _focus.requestFocus();
-      });
-  }
-
+  void _show(BuildContext context, AirportTraffic traffic,
+          {bool find = false}) =>
+      Navigator.of(context).push(MaterialPageRoute<void>(
+          builder: (_) => AirportTrafficPage(
+              airport: airport,
+              controller: controller,
+              traffic: traffic,
+              focusSearch: find)));
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-      listenable: widget.controller,
+      listenable: controller,
       builder: (context, _) {
-        final airport = widget.airport;
-        final controller = widget.controller;
         final navigation = DetailNavigation.maybeOf(context);
         final canMap = airport.latitude != null &&
             airport.longitude != null &&
@@ -87,23 +65,6 @@ class _AirportDetailPageState extends State<AirportDetailPage> {
             type: FollowedItemType.airport,
             identifier: airport.icao,
             label: airport.name);
-        final traffic = _traffic;
-        final aircraft = traffic == null
-            ? <TrackedAircraft>[]
-            : controller.aircraft
-                .where((a) =>
-                    matchesAirportTraffic(a, airport, traffic) &&
-                    [
-                      a.primaryIdentifier,
-                      a.state.callsign,
-                      a.identity?.registration,
-                      a.identity?.operatorName
-                    ]
-                        .whereType<String>()
-                        .join(' ')
-                        .toLowerCase()
-                        .contains(_query.toLowerCase()))
-                .toList();
         return Scaffold(
             key: const Key('airportDetailPage'),
             appBar: AppBar(title: Text(airport.displayCode), actions: [
@@ -151,70 +112,33 @@ class _AirportDetailPageState extends State<AirportDetailPage> {
                   'airportArrivals',
                   Icons.flight_land,
                   'Arrival board · observed aircraft',
-                  () => _show(AirportTraffic.arrivals)),
+                  () => _show(context, AirportTraffic.arrivals)),
               _action(
                   'airportDepartures',
                   Icons.flight_takeoff,
                   'Departure board · observed aircraft',
-                  () => _show(AirportTraffic.departures)),
+                  () => _show(context, AirportTraffic.departures)),
               _action(
                   'airportGround',
                   Icons.airplanemode_active,
                   'Aircraft on ground near airport',
                   airport.latitude == null || airport.longitude == null
                       ? null
-                      : () => _show(AirportTraffic.ground)),
+                      : () => _show(context, AirportTraffic.ground)),
               _action(
                   'findArrivingFlight',
                   Icons.search,
                   'Find arriving flight',
-                  () => _show(AirportTraffic.arrivals, find: true)),
+                  () => _show(context, AirportTraffic.arrivals, find: true)),
               _action(
                   'findDepartingFlight',
                   Icons.search,
                   'Find departing flight',
-                  () => _show(AirportTraffic.departures, find: true)),
+                  () => _show(context, AirportTraffic.departures, find: true)),
               const Padding(
                   padding: EdgeInsets.symmetric(vertical: 12),
                   child: Text(
                       'Scheduled arrival/departure times, gates and airport-wide flight status are not supplied by the current providers. These lists use acquired aircraft with known route information, not a complete airport schedule.')),
-              if (traffic != null) ...[
-                Text(
-                    switch (traffic) {
-                      AirportTraffic.arrivals => 'OBSERVED ARRIVALS',
-                      AirportTraffic.departures => 'OBSERVED DEPARTURES',
-                      AirportTraffic.ground => 'OBSERVED ON GROUND'
-                    },
-                    style: Theme.of(context).textTheme.titleMedium),
-                Text(
-                    'Feed: ${controller.feedStatus.name} · current tracking area: ${controller.trackingCenter.label}'),
-                if (traffic == AirportTraffic.ground)
-                  const Text(
-                      'Reported on ground and within 3 NM of the airport reference point; this may include neighbouring airfields.'),
-                TextField(
-                    key: const Key('airportFlightSearch'),
-                    controller: _search,
-                    focusNode: _focus,
-                    onChanged: (s) => setState(() => _query = s),
-                    decoration: const InputDecoration(
-                        labelText: 'Find callsign, registration or operator',
-                        prefixIcon: Icon(Icons.search))),
-                Text('${aircraft.length} matching observed aircraft'),
-                if (aircraft.isEmpty)
-                  const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Text(
-                          'No matching aircraft in acquired data. This does not mean there are no flights. Scan around this airport to acquire local positions.')),
-                for (final a in aircraft)
-                  ListTile(
-                      key: Key('airportAircraft-${a.state.icao24}'),
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(a.primaryIdentifier),
-                      subtitle: Text(
-                          '${a.identity?.registration ?? a.state.icao24} · observed ${a.state.observedAt.toLocal()}'),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => showAircraftDetail(context, a, controller)),
-              ],
             ]));
       });
   Widget _action(
@@ -227,6 +151,102 @@ class _AirportDetailPageState extends State<AirportDetailPage> {
           trailing: const Icon(Icons.chevron_right),
           onTap: action,
           enabled: action != null);
+}
+
+class AirportTrafficPage extends StatefulWidget {
+  const AirportTrafficPage(
+      {required this.airport,
+      required this.controller,
+      required this.traffic,
+      this.focusSearch = false,
+      super.key});
+  final Airport airport;
+  final AppController controller;
+  final AirportTraffic traffic;
+  final bool focusSearch;
+  @override
+  State<AirportTrafficPage> createState() => _AirportTrafficPageState();
+}
+
+class _AirportTrafficPageState extends State<AirportTrafficPage> {
+  String _query = '';
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+      listenable: widget.controller,
+      builder: (context, _) {
+        final controller = widget.controller;
+        final traffic = widget.traffic;
+        final aircraft = controller.aircraft
+            .where((a) =>
+                matchesAirportTraffic(a, widget.airport, traffic) &&
+                [
+                  a.primaryIdentifier,
+                  a.state.callsign,
+                  a.identity?.registration,
+                  a.identity?.operatorName
+                ]
+                    .whereType<String>()
+                    .join(' ')
+                    .toLowerCase()
+                    .contains(_query.toLowerCase()))
+            .toList();
+        final heading = switch (traffic) {
+          AirportTraffic.arrivals => 'OBSERVED ARRIVALS',
+          AirportTraffic.departures => 'OBSERVED DEPARTURES',
+          AirportTraffic.ground => 'OBSERVED ON GROUND'
+        };
+        return Scaffold(
+            key: const Key('airportTrafficPage'),
+            appBar: AppBar(title: Text(widget.airport.displayCode)),
+            body: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(heading,
+                          style: Theme.of(context).textTheme.titleMedium),
+                      Text(
+                          'Feed: ${controller.feedStatus.name} · current tracking area: ${controller.trackingCenter.label}'),
+                      const Text(
+                          'Observed aircraft only, not a complete scheduled airport board.'),
+                      if (traffic == AirportTraffic.ground)
+                        const Text(
+                            'Reported on ground and within 3 NM of the airport reference point; this may include neighbouring airfields.'),
+                      TextField(
+                          key: const Key('airportFlightSearch'),
+                          autofocus: widget.focusSearch,
+                          onChanged: (s) => setState(() => _query = s),
+                          decoration: const InputDecoration(
+                              labelText:
+                                  'Find callsign, registration or operator',
+                              prefixIcon: Icon(Icons.search))),
+                      Text('${aircraft.length} matching observed aircraft'),
+                      Expanded(
+                          child: aircraft.isEmpty
+                              ? const SingleChildScrollView(
+                                  child: Padding(
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 16),
+                                      child: Text(
+                                          'No matching aircraft in acquired data. This does not mean there are no flights. Scan around this airport to acquire local positions.')))
+                              : ListView.builder(
+                                  itemCount: aircraft.length,
+                                  itemBuilder: (context, index) {
+                                    final a = aircraft[index];
+                                    return ListTile(
+                                        key: Key(
+                                            'airportAircraft-${a.state.icao24}'),
+                                        contentPadding: EdgeInsets.zero,
+                                        title: Text(a.primaryIdentifier),
+                                        subtitle: Text(
+                                            '${a.identity?.registration ?? a.state.icao24} · observed ${a.state.observedAt.toLocal()}'),
+                                        trailing:
+                                            const Icon(Icons.chevron_right),
+                                        onTap: () => showAircraftDetail(
+                                            context, a, controller));
+                                  })),
+                    ])));
+      });
 }
 
 class OperatorDetailPage extends StatelessWidget {

@@ -138,11 +138,15 @@ void main() {
     expect(find.text('London Heathrow Airport'), findsOneWidget);
     expect(find.text('EGLL'), findsOneWidget);
     await tapVisible(tester, 'airportArrivals');
-    await tester.scrollUntilVisible(find.text('OBSERVED ARRIVALS'), 250);
+    expect(find.text('OBSERVED ARRIVALS'), findsOneWidget);
     expect(find.byKey(const Key('airportAircraft-4CA123')), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
     await tapVisible(tester, 'airportDepartures');
-    await tester.scrollUntilVisible(find.text('OBSERVED DEPARTURES'), 250);
+    expect(find.text('OBSERVED DEPARTURES'), findsOneWidget);
     expect(find.byKey(const Key('airportAircraft-40621D')), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
     await tapVisible(tester, 'findDepartingFlight');
     await tester.enterText(
         find.byKey(const Key('airportFlightSearch')), 'does not exist');
@@ -150,6 +154,8 @@ void main() {
     expect(find.textContaining('No matching aircraft in acquired data'),
         findsOneWidget);
     tester.testTextInput.hide();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
     await tapVisible(tester, 'airportShowMap');
     expect(find.byKey(const Key('aircraftGeographicMap')), findsOneWidget);
     final map = tester
