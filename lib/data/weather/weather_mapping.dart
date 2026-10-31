@@ -21,8 +21,8 @@ WeatherConditions conditionsFromAwc(Map<String, dynamic> row) =>
         pressureHpa: weatherNumber(row['altim']),
         weatherCodes: row['wxString'] as String?,
         flightCategory: row['fltCat'] as String?,
-        clouds: (row['clouds'] as List? ?? [])
-            .whereType<Map>()
+        clouds: (row['clouds'] as List<dynamic>? ?? [])
+            .whereType<Map<dynamic, dynamic>>()
             .map((c) => WeatherCloud(
                 c['cover']?.toString() ?? 'Unknown', weatherNumber(c['base'])))
             .toList());
@@ -40,8 +40,8 @@ AirportWeatherReport reportFromAwc(Map<String, dynamic> row, WeatherKind kind) {
       validFrom: weatherTime(row['validTimeFrom']),
       validTo: weatherTime(row['validTimeTo']),
       conditions: conditionsFromAwc(row),
-      periods: (row['fcsts'] as List? ?? [])
-          .whereType<Map>()
+      periods: (row['fcsts'] as List<dynamic>? ?? [])
+          .whereType<Map<dynamic, dynamic>>()
           .map((p) => ForecastPeriod(
               from: weatherTime(p['timeFrom']),
               to: weatherTime(p['timeTo']),
@@ -78,7 +78,7 @@ WeatherConditions _cachedConditions(Map<String, dynamic> c) =>
         pressureHpa: weatherNumber(c['pressureHpa']),
         weatherCodes: c['weatherCodes'] as String?,
         flightCategory: c['flightCategory'] as String?,
-        clouds: (c['clouds'] as List)
+        clouds: (c['clouds'] as List<dynamic>)
             .map((v) => WeatherCloud(
                 v['cover'] as String, weatherNumber(v['baseFeet'])))
             .toList());
@@ -115,17 +115,17 @@ WeatherReading weatherCacheFromJson(Map<String, dynamic> v) => WeatherReading(
         issuedAt: weatherTime(v['issuedAt']),
         validFrom: weatherTime(v['validFrom']),
         validTo: weatherTime(v['validTo']),
-        conditions:
-            _cachedConditions(Map<String, dynamic>.from(v['conditions'])),
-        periods: (v['periods'] as List)
+        conditions: _cachedConditions(Map<String, dynamic>.from(
+            v['conditions'] as Map<dynamic, dynamic>)),
+        periods: (v['periods'] as List<dynamic>)
             .map((p) => ForecastPeriod(
                 from: weatherTime(p['from']),
                 to: weatherTime(p['to']),
                 becomingAt: weatherTime(p['becomingAt']),
                 change: p['change'] as String?,
                 probability: p['probability'] as int?,
-                conditions: _cachedConditions(
-                    Map<String, dynamic>.from(p['conditions']))))
+                conditions: _cachedConditions(Map<String, dynamic>.from(
+                    p['conditions'] as Map<dynamic, dynamic>))))
             .toList()),
     fetchedAt: weatherTime(v['fetchedAt']),
     checkedAt: weatherTime(v['checkedAt'])!,

@@ -53,7 +53,8 @@ class AwcWeatherProvider implements AirportWeatherProvider {
     if (response.statusCode == 429) {
       final seconds =
           int.tryParse(response.headers['retry-after'] ?? '') ?? 300;
-      _blockedUntil = clock().add(Duration(seconds: seconds.clamp(60, 3600)));
+      _blockedUntil =
+          clock().add(Duration(seconds: seconds < 60 ? 60 : seconds));
       throw StateError('Weather provider rate-limited; retry later');
     }
     if (response.statusCode == 204) return null;
@@ -63,7 +64,7 @@ class AwcWeatherProvider implements AirportWeatherProvider {
     if (data is! List)
       throw const FormatException('Malformed weather response');
     final reports = data
-        .whereType<Map>()
+        .whereType<Map<dynamic, dynamic>>()
         .where((r) => r['icaoId']?.toString().toUpperCase() == station)
         .map((r) => reportFromAwc(Map<String, dynamic>.from(r), kind))
         .toList();

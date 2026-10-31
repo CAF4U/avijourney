@@ -22,7 +22,7 @@ Map<String, dynamic> metar() => {
       'wspd': 2,
       'visib': '6+',
       'altim': 1032,
-      'clouds': [],
+      'clouds': <Map<String, dynamic>>[],
       'fltCat': 'VFR'
     };
 Map<String, dynamic> taf() => {

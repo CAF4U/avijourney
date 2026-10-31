@@ -15,8 +15,8 @@ class AirportWeatherController extends ChangeNotifier {
   final _loading = <String>{};
   final _inflight = <String, Future<void>>{};
   WeatherReading? reading(String station, WeatherKind kind) =>
-      _readings['$station-${kind.name}'];
-  bool loading(String station) => _loading.contains(station);
+      _readings['${station.toUpperCase()}-${kind.name}'];
+  bool loading(String station) => _loading.contains(station.toUpperCase());
   void setEnabled(bool value) {
     if (value == enabled) return;
     enabled = value;
@@ -49,6 +49,17 @@ class AirportWeatherController extends ChangeNotifier {
     _loading.add(station);
     _notify();
     try {
+      for (final kind in WeatherKind.values) {
+        if (generation != _generation || !enabled || !foreground || _disposed)
+          break;
+        final key = '$station-${kind.name}';
+        if (!_readings.containsKey(key)) {
+          final saved = await cache.read(station, kind);
+          if (generation == _generation && !_disposed && saved != null)
+            _readings[key] = saved;
+        }
+      }
+      _notify();
       for (final kind in WeatherKind.values) {
         if (!enabled || !foreground || generation != _generation || _disposed)
           break;

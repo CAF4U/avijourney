@@ -6,6 +6,7 @@ import 'weather_mapping.dart';
 
 class SharedPreferencesWeatherCache implements WeatherCacheStore {
   final _memory = <String, WeatherReading>{};
+  Future<void> _writes = Future<void>.value();
   @override
   Future<WeatherReading?> read(String station, WeatherKind kind) async {
     final key = '$station-${kind.name}';
@@ -16,18 +17,26 @@ class SharedPreferencesWeatherCache implements WeatherCacheStore {
           as Map<String, dynamic>;
       final raw = all[key];
       if (raw == null) return null;
-      return _memory[key] =
-          weatherCacheFromJson(Map<String, dynamic>.from(raw));
+      return _memory[key] = weatherCacheFromJson(
+          Map<String, dynamic>.from(raw as Map<dynamic, dynamic>));
     } catch (_) {
       return null;
     }
   }
 
   @override
-  Future<void> write(
+  Future<void> write(String station, WeatherKind kind, WeatherReading reading) {
+    _writes = _writes.then((_) => _write(station, kind, reading));
+    return _writes;
+  }
+
+  Future<void> _write(
       String station, WeatherKind kind, WeatherReading reading) async {
     if (reading.report == null) return;
     _memory['$station-${kind.name}'] = reading;
+    while (_memory.length > 60) {
+      _memory.remove(_memory.keys.first);
+    }
     try {
       final prefs = await SharedPreferences.getInstance();
       Map<String, dynamic> all;
