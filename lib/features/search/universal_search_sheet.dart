@@ -171,7 +171,7 @@ class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
                 : ListView(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                     children: [
-                      for (final type in SearchResultType.values)
+                      for (final type in types)
                         if (grouped[type]?.isNotEmpty == true) ...[
                           Padding(
                             padding: const EdgeInsets.only(top: 16, bottom: 4),
