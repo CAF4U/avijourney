@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import '../core/theme/app_theme.dart';
+import '../domain/models/app_settings.dart';
 import '../data/hexdb/hexdb_aircraft_enrichment_provider.dart';
 import '../data/local/shared_preferences_app_store.dart';
 import '../data/local/bundled_airport_search_provider.dart';
@@ -111,16 +112,22 @@ class _AviJourneyAppState extends State<AviJourneyApp>
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'CAF4U Aircraft Companion',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark(),
-      home: HomeShell(
-        controller: controller,
-        mapViewportController: mapViewportController,
-        mapTileSource: const OpenStreetMapTileSource(),
-        showMapTiles: widget.showMapTiles,
-      ),
-    );
+    return ListenableBuilder(
+        listenable: controller,
+        builder: (context, _) => MaterialApp(
+              title: 'CAF4U Aircraft Companion',
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.light(),
+              darkTheme: AppTheme.dark(),
+              themeMode: controller.settings.appearance == AppAppearance.light
+                  ? ThemeMode.light
+                  : ThemeMode.dark,
+              home: HomeShell(
+                controller: controller,
+                mapViewportController: mapViewportController,
+                mapTileSource: const OpenStreetMapTileSource(),
+                showMapTiles: widget.showMapTiles,
+              ),
+            ));
   }
 }

@@ -20,7 +20,9 @@ class AircraftCardsView extends StatelessWidget {
       return Center(
           child: Text(savedOnly
               ? 'No saved aircraft yet'
-              : 'No aircraft match the filters'));
+              : controller.displayFilter?.routeOrigin != null
+                  ? 'No matching aircraft in the current tracking area.\nRoute information may be unavailable for some aircraft.'
+                  : 'No aircraft match the filters'));
     return LayoutBuilder(builder: (context, constraints) {
       final columns = constraints.maxWidth >= 900
           ? 3

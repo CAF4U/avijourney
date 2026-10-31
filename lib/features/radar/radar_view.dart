@@ -35,6 +35,7 @@ class RadarView extends StatelessWidget {
                   showLabels: controller.settings.showLabels,
                   showTrails: controller.settings.showTrails,
                   trackingCenter: controller.trackingCenter,
+                  brightness: Theme.of(context).brightness,
                 ),
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
@@ -86,7 +87,7 @@ class RadarView extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
-                          color: const Color(0xE6112118),
+                          color: Theme.of(context).colorScheme.surface,
                           border: Border.all(
                               color: Theme.of(context).colorScheme.primary),
                           borderRadius: BorderRadius.circular(22)),
@@ -133,13 +134,15 @@ class RadarPainter extends CustomPainter {
       required this.rangeNm,
       required this.showLabels,
       required this.showTrails,
-      required this.trackingCenter});
+      required this.trackingCenter,
+      this.brightness = Brightness.dark});
   final List<TrackedAircraft> aircraft;
   final String? selectedIcao24;
   final int rangeNm;
   final bool showLabels;
   final bool showTrails;
   final TrackingCenter trackingCenter;
+  final Brightness brightness;
 
   static Offset positionFor(TrackedAircraft aircraft,
           TrackingCenter trackingCenter, Size size, int rangeNm) =>
@@ -163,18 +166,27 @@ class RadarPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
     final radius = size.shortestSide / 2 - 8;
+    final light = brightness == Brightness.light;
+    final targetColor =
+        light ? const Color(0xFF1E5AA8) : const Color(0xFF89F7A8);
+    final selectedColor =
+        light ? const Color(0xFF6D1F7B) : const Color(0xFFFFD166);
     final grid = Paint()
-      ..color = const Color(0x5569E58B)
+      ..color = light ? const Color(0x55315970) : const Color(0x5569E58B)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
-    canvas.drawCircle(center, radius, Paint()..color = const Color(0xFF07150D));
+    canvas.drawCircle(
+        center,
+        radius,
+        Paint()
+          ..color = light ? const Color(0xFFF4F7FA) : const Color(0xFF07150D));
     for (var ring = 1; ring <= 4; ring++)
       canvas.drawCircle(center, radius * ring / 4, grid);
     canvas.drawLine(Offset(center.dx, center.dy - radius),
         Offset(center.dx, center.dy + radius), grid);
     canvas.drawLine(Offset(center.dx - radius, center.dy),
         Offset(center.dx + radius, center.dy), grid);
-    canvas.drawCircle(center, 3, Paint()..color = const Color(0xFF69E58B));
+    canvas.drawCircle(center, 3, Paint()..color = targetColor);
     for (final target in aircraft) {
       final point = positionFor(target, trackingCenter, size, rangeNm);
       if ((point - center).distance > radius) continue;
@@ -194,8 +206,7 @@ class RadarPainter extends CustomPainter {
         canvas.drawPath(
             trailPath,
             Paint()
-              ..color =
-                  selected ? const Color(0xAAFFD166) : const Color(0x8869E58B)
+              ..color = (selected ? selectedColor : targetColor).withOpacity(.6)
               ..style = PaintingStyle.stroke
               ..strokeWidth = selected ? 2 : 1);
       }
@@ -209,16 +220,13 @@ class RadarPainter extends CustomPainter {
         ..lineTo(-6, 8)
         ..close();
       canvas.drawPath(
-          marker,
-          Paint()
-            ..color =
-                selected ? const Color(0xFFFFD166) : const Color(0xFF89F7A8));
+          marker, Paint()..color = selected ? selectedColor : targetColor);
       if (selected)
         canvas.drawCircle(
             Offset.zero,
             14,
             Paint()
-              ..color = const Color(0xFFFFD166)
+              ..color = selectedColor
               ..style = PaintingStyle.stroke
               ..strokeWidth = 2);
       canvas.restore();
@@ -228,8 +236,8 @@ class RadarPainter extends CustomPainter {
                 text: target.primaryIdentifier,
                 style: TextStyle(
                     color: selected
-                        ? const Color(0xFFFFD166)
-                        : const Color(0xFFD8FBE1),
+                        ? selectedColor
+                        : (light ? targetColor : const Color(0xFFD8FBE1)),
                     fontSize: 10,
                     fontWeight: FontWeight.bold)),
             textDirection: TextDirection.ltr)
@@ -241,6 +249,7 @@ class RadarPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant RadarPainter oldDelegate) =>
+      oldDelegate.brightness != brightness ||
       oldDelegate.aircraft != aircraft ||
       oldDelegate.selectedIcao24 != selectedIcao24 ||
       oldDelegate.rangeNm != rangeNm ||

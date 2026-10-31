@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../core/errors/provider_exception.dart';
 import '../domain/models/airport.dart';
 import '../domain/models/aircraft_filter.dart';
+import '../domain/models/aircraft_route.dart';
 import '../domain/models/app_settings.dart';
 import '../domain/models/tracked_aircraft.dart';
 import '../domain/models/followed_item.dart';
@@ -73,10 +74,23 @@ class AppController extends ChangeNotifier {
   String? get locationMessage => _locationMessage;
 
   AircraftFilter? _displayFilter;
+  AircraftRoute? _mapRoute;
+  AircraftRoute? get mapRoute => _mapRoute;
+
+  void showRoute(AircraftRoute route, {required bool onMap}) {
+    _displayFilter = AircraftFilter(
+        label: 'Route: ${route.label}',
+        routeOrigin: route.origin,
+        routeDestination: route.destination);
+    _mapRoute = onMap ? route : null;
+    notifyListeners();
+  }
+
   AircraftFilter? get displayFilter => _displayFilter;
 
   void setDisplayFilter(AircraftFilter? filter) {
     _displayFilter = filter;
+    _mapRoute = null;
     notifyListeners();
   }
 
@@ -261,7 +275,13 @@ class AppController extends ChangeNotifier {
         query: query,
         aircraft: _aircraft,
         airlines: _airlineSearchProvider.airlines,
-        airports: searchAirports(query),
+        airports: [
+          ...searchAirports(query),
+          if (UniversalSearchService.routeCodes(query) case final codes?) ...[
+            ...searchAirports(codes.$1),
+            ...searchAirports(codes.$2),
+          ],
+        ],
       );
 
   Future<void> chooseAirport(Airport airport) async {

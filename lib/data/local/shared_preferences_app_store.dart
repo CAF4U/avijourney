@@ -18,6 +18,7 @@ class SharedPreferencesAppStore implements AppPreferencesStore {
   static const _maximumAltitude = 'maximum_altitude_feet';
   static const _showTrails = 'show_trails';
   static const _showLabels = 'show_labels';
+  static const _appearance = 'appearance';
   static const _savedOnly = 'saved_only';
   static const _savedAircraft = 'saved_aircraft';
   static const _followedItems = 'followed_items_v1';
@@ -51,6 +52,9 @@ class SharedPreferencesAppStore implements AppPreferencesStore {
         showTrails: preferences.getBool(_showTrails) ?? true,
         showLabels: preferences.getBool(_showLabels) ?? true,
         savedOnly: preferences.getBool(_savedOnly) ?? false,
+        appearance: preferences.getString(_appearance) == 'light'
+            ? AppAppearance.light
+            : AppAppearance.dark,
       ),
       savedAircraft:
           (preferences.getStringList(_savedAircraft) ?? const []).toSet(),
@@ -79,6 +83,7 @@ class SharedPreferencesAppStore implements AppPreferencesStore {
       preferences.setBool(_showTrails, state.settings.showTrails),
       preferences.setBool(_showLabels, state.settings.showLabels),
       preferences.setBool(_savedOnly, state.settings.savedOnly),
+      preferences.setString(_appearance, state.settings.appearance.name),
       preferences.setStringList(
           _savedAircraft, state.savedAircraft.toList(growable: false)),
       preferences.setStringList(_followedItems,

@@ -1,3 +1,5 @@
+enum AppAppearance { dark, light }
+
 class AppSettings {
   const AppSettings({
     this.radarRangeNm = 20,
@@ -7,6 +9,7 @@ class AppSettings {
     this.showTrails = true,
     this.showLabels = true,
     this.savedOnly = false,
+    this.appearance = AppAppearance.dark,
   });
 
   final int radarRangeNm;
@@ -16,6 +19,7 @@ class AppSettings {
   final bool showTrails;
   final bool showLabels;
   final bool savedOnly;
+  final AppAppearance appearance;
 
   AppSettings copyWith({
     int? radarRangeNm,
@@ -25,6 +29,7 @@ class AppSettings {
     bool? showTrails,
     bool? showLabels,
     bool? savedOnly,
+    AppAppearance? appearance,
   }) =>
       AppSettings(
         radarRangeNm: radarRangeNm ?? this.radarRangeNm,
@@ -34,5 +39,6 @@ class AppSettings {
         showTrails: showTrails ?? this.showTrails,
         showLabels: showLabels ?? this.showLabels,
         savedOnly: savedOnly ?? this.savedOnly,
+        appearance: appearance ?? this.appearance,
       );
 }

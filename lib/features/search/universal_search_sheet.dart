@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../app/app_controller.dart';
+import '../../app/search/universal_search_service.dart';
 import '../../domain/models/airline.dart';
 import '../../domain/models/aircraft_filter.dart';
+import '../../domain/models/aircraft_route.dart';
 import '../../domain/models/airport.dart';
 import '../../domain/models/followed_item.dart';
 import '../../domain/models/search_result.dart';
@@ -15,6 +17,7 @@ Future<void> showUniversalSearch(
   AppController controller, {
   required VoidCallback onShowOnMap,
   required ValueChanged<Airport> onTrackAirport,
+  required void Function(AircraftRoute, bool) onShowRoute,
 }) =>
     showModalBottomSheet<void>(
       context: context,
@@ -26,6 +29,7 @@ Future<void> showUniversalSearch(
           controller: controller,
           onShowOnMap: onShowOnMap,
           onTrackAirport: onTrackAirport,
+          onShowRoute: onShowRoute,
         ),
       ),
     );
@@ -34,10 +38,12 @@ class _UniversalSearchSheet extends StatefulWidget {
   const _UniversalSearchSheet(
       {required this.controller,
       required this.onShowOnMap,
-      required this.onTrackAirport});
+      required this.onTrackAirport,
+      required this.onShowRoute});
   final AppController controller;
   final VoidCallback onShowOnMap;
   final ValueChanged<Airport> onTrackAirport;
+  final void Function(AircraftRoute, bool) onShowRoute;
 
   @override
   State<_UniversalSearchSheet> createState() => _UniversalSearchSheetState();
@@ -73,6 +79,12 @@ class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
       _submittedQuery = query.trim();
       _results = widget.controller.search(query);
     });
+    final routes =
+        _results.where((r) => r.type == SearchResultType.route).toList();
+    if (UniversalSearchService.routeCodes(query) != null &&
+        routes.length == 1) {
+      _showResultActions(routes.single);
+    }
   }
 
   @override
@@ -228,7 +240,35 @@ class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
                 ]),
                 Text(result.subtitle),
                 const SizedBox(height: 12),
-                if (value is Airport) ...[
+                if (value is AircraftRoute) ...[
+                  Text('Choose how to view this route',
+                      style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                      '${widget.controller.aircraft.where((a) => AircraftFilter(label: "route", routeOrigin: value.origin, routeDestination: value.destination).matches(a, matchesQuery: false)).length} known aircraft in the current tracking area. Other active filters still apply.'),
+                  const Text(
+                      'Airport connection only, not a confirmed scheduled service. No worldwide live-aircraft search is available.'),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                      key: const Key('routeAircraftList'),
+                      onPressed: () {
+                        Navigator.pop(detailContext);
+                        Navigator.pop(context);
+                        widget.onShowRoute(value, false);
+                      },
+                      icon: const Icon(Icons.view_list),
+                      label: const Text('List aircraft on this route')),
+                  OutlinedButton.icon(
+                      key: const Key('routeAircraftMap'),
+                      onPressed: !value.hasCoordinates
+                          ? null
+                          : () {
+                              Navigator.pop(detailContext);
+                              Navigator.pop(context);
+                              widget.onShowRoute(value, true);
+                            },
+                      icon: const Icon(Icons.map_outlined),
+                      label: const Text('Show route and aircraft on map')),
+                ] else if (value is Airport) ...[
                   Text(
                       'ICAO: ${value.icao} · IATA: ${value.iata ?? "Unavailable"}'),
                   Text(

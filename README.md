@@ -72,3 +72,9 @@ Tap aircraft or flight results for details. Tap an airport, airline or route for
 Select **Track around this airport** in airport details to change both the acquisition centre and map viewport, staying on the current radar/map tab. This clears the prior search filter. Search accepts both `La Guardia` and `LaGuardia`. Unknown routes never match an airport filter.
 
 The product name is CAF4U Aircraft Companion (formerly AviJourney). The repository slug, Dart package and Android application ID remain stable to preserve installed preferences and follows.
+
+## Appearance and route views (0.3.1)
+
+Settings → Appearance offers Dark and Light; the choice persists across restarts. Radar, map tiles, labels and the app surfaces follow that choice. Existing installations default to Dark.
+
+Enter airport pairs such as `LHR-LAX`, `LHR -> LAX` or `LHR → LAX`. The app resolves known airport codes even without a matching nearby aircraft, then offers **List aircraft on this route** or **Show route and aircraft on map**. Direction matters. The map fits and labels both airports and displays matching acquired aircraft, with a reference connection line (not a verified flight path). Airport pairs do not confirm a scheduled service. Aircraft are still limited to the current tracking area and known provider route data; zero matches is stated explicitly. Clearing the filter removes the connection overlay.
