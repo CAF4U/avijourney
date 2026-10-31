@@ -19,7 +19,6 @@ void main() {
     final provider = weather.FakeWeather();
     final app = AppController(
         repository: alerts.SequenceRepository(), weatherProvider: provider);
-    addTearDown(app.dispose);
     await tester
         .pumpWidget(AviJourneyApp(controller: app, showMapTiles: false));
     await tester.pumpAndSettle();
@@ -36,6 +35,7 @@ void main() {
         scrollable: find.byType(Scrollable).first);
     expect(find.text('TAF · FORECAST'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
+    app.dispose();
   });
   testWidgets(
       'fresh events show a dismissible in-app banner and retained history without enabling weather',
@@ -48,7 +48,6 @@ void main() {
     final repo = alerts.SequenceRepository()..values = [alerts.observation(0)];
     final app = AppController(
         repository: repo, trackingCenter: alerts.center, clock: () => now);
-    addTearDown(app.dispose);
     app.toggleSaved('abc123');
     app.updateSettings(const AppSettings(foregroundAlerts: true));
     await tester
@@ -76,5 +75,6 @@ void main() {
     expect(app.settings.foregroundAlerts, isFalse);
     expect(app.alerts, hasLength(2));
     await tester.pumpWidget(const SizedBox.shrink());
+    app.dispose();
   });
 }

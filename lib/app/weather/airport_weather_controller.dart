@@ -40,8 +40,9 @@ class AirportWeatherController extends ChangeNotifier {
   Future<void> load(String code, {bool force = false}) {
     final station = code.toUpperCase();
     if (!enabled || !foreground || _disposed) return Future.value();
-    return _inflight[station] ??=
-        _load(station, force).whenComplete(() => _inflight.remove(station));
+    return _inflight[station] ??= _load(station, force).whenComplete(() {
+      _inflight.remove(station);
+    });
   }
 
   Future<void> _load(String station, bool force) async {
