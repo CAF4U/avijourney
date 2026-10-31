@@ -122,7 +122,7 @@ class _HomeShellState extends State<HomeShell> {
                       maxLines: 2,
                       style:
                           TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                  Text('V0.4.2 · DEVELOPMENT',
+                  Text('V0.4.3 · DEVELOPMENT',
                       style: TextStyle(fontSize: 10, letterSpacing: 1.2)),
                 ]),
             actions: [
@@ -162,7 +162,8 @@ class _HomeShellState extends State<HomeShell> {
                   icon: const Icon(Icons.tune)),
             ],
           ),
-          bottomSheet: widget.controller.displayFilter == null
+          bottomSheet: widget.controller.displayFilter == null ||
+                  (_index == 1 && widget.controller.mapRoute != null)
               ? null
               : SafeArea(
                   child: Material(

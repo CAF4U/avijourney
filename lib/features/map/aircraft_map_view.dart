@@ -85,7 +85,7 @@ class _AircraftMapViewState extends State<AircraftMapView>
         ...widget.controller.visibleAircraft
             .map((a) => LatLng(a.state.latitude, a.state.longitude)),
       ]),
-      padding: const EdgeInsets.fromLTRB(48, 80, 48, 140),
+      padding: const EdgeInsets.fromLTRB(64, 120, 72, 88),
       maxZoom: 8);
 
   @override
@@ -181,26 +181,40 @@ class _AircraftMapViewState extends State<AircraftMapView>
                           strokeWidth: 3),
                     ]),
                 MarkerLayer(markers: [
-                  for (final airport in [route.origin, route.destination])
+                  for (final entry
+                      in [route.origin, route.destination].asMap().entries)
                     Marker(
-                        point: LatLng(airport.latitude!, airport.longitude!),
-                        width: 110,
-                        height: 54,
-                        child: Card(
-                            child: Padding(
-                                padding: const EdgeInsets.all(4),
-                                child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.local_airport,
-                                          size: 18,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary),
-                                      Text(airport.displayCode,
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold)),
-                                    ])))),
+                      key: ValueKey('routeAirport-${entry.value.icao}'),
+                      point:
+                          LatLng(entry.value.latitude!, entry.value.longitude!),
+                      width: 144,
+                      height: 80,
+                      child: IgnorePointer(
+                          child: Stack(children: [
+                        Positioned(
+                            left: 68,
+                            top: 36,
+                            child: Container(
+                              key: ValueKey(
+                                  'routeAirportPoint-${entry.value.icao}'),
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                      width: 2)),
+                            )),
+                        Positioned(
+                            left: entry.key == 0 ? 2 : 82,
+                            top: 50,
+                            width: 60,
+                            child: _MapLabel(
+                                text: entry.value.displayCode,
+                                color: Theme.of(context).colorScheme.primary)),
+                      ])),
+                    ),
                 ]),
               ],
               MarkerLayer(markers: [
@@ -256,14 +270,21 @@ class _AircraftMapViewState extends State<AircraftMapView>
           ],
           if (route != null)
             Positioned(
-                left: 12,
-                right: 12,
-                bottom: 80,
-                child: Card(
-                    child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Text(
-                            '${route.label} · ${widget.controller.visibleAircraft.length} matching aircraft in current tracking area.\nAirport connection only — not the actual flight track.')))),
+              left: 12,
+              right: 12,
+              bottom: _showTrackHere ? 80 : 24,
+              child: Align(
+                alignment: Alignment.bottomLeft,
+                child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 360),
+                    child: _RouteMapSummary(
+                      key: ValueKey(route.identifier),
+                      route: route,
+                      count: widget.controller.visibleAircraft.length,
+                      onClear: () => widget.controller.setDisplayFilter(null),
+                    )),
+              ),
+            ),
           Positioned(
               top: 12,
               left: 12,
@@ -350,16 +371,19 @@ class _TrackingCenterMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
         label: 'Active tracking centre',
-        child: Container(
+        child: Center(
+            child: Container(
+          width: 18,
+          height: 18,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Theme.of(context).colorScheme.surface,
+            color: Theme.of(context).colorScheme.surface.withOpacity(.35),
             border: Border.all(
-                color: Theme.of(context).colorScheme.secondary, width: 3),
+                color: Theme.of(context).colorScheme.secondary, width: 1.5),
           ),
           child: Icon(Icons.add_location,
-              color: Theme.of(context).colorScheme.secondary, size: 24),
-        ),
+              color: Theme.of(context).colorScheme.secondary, size: 12),
+        )),
       );
 }
 
@@ -375,8 +399,8 @@ List<Marker> buildAircraftMapMarkers({
       return Marker(
         key: ValueKey('mapMarker-${item.state.icao24}'),
         point: LatLng(item.state.latitude, item.state.longitude),
-        width: selected || showLabels ? 112 : 48,
-        height: selected || showLabels ? 62 : 48,
+        width: 168,
+        height: 72,
         child: AircraftMapMarker(
           aircraft: item,
           selected: selected,
@@ -409,53 +433,140 @@ class AircraftMapMarker extends StatelessWidget {
       button: true,
       selected: selected,
       label: '${aircraft.primaryIdentifier} aircraft marker',
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Transform.rotate(
+      child: Stack(children: [
+        Positioned(
+          left: 62,
+          top: 14,
+          width: 44,
+          height: 44,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onTap,
+            child: Center(
+                child: Transform.rotate(
               angle: aircraft.state.trackDegrees * math.pi / 180,
               child: Container(
                 key: ValueKey('mapMarkerIcon-${aircraft.state.icao24}'),
-                padding: const EdgeInsets.all(5),
+                width: selected ? 26 : 22,
+                height: selected ? 26 : 22,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
+                  color: Theme.of(context).colorScheme.surface.withOpacity(.25),
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: markerColor,
-                    width: selected ? 3 : 1.5,
-                  ),
-                  boxShadow: selected
-                      ? [BoxShadow(color: markerColor, blurRadius: 9)]
+                  border: selected
+                      ? Border.all(color: markerColor, width: 1.5)
                       : null,
                 ),
-                child: Icon(Icons.navigation, color: markerColor, size: 18),
+                child: Icon(Icons.airplanemode_active,
+                    color: markerColor.withOpacity(.9),
+                    size: selected ? 19 : 17),
               ),
-            ),
-            if (showLabel)
-              Container(
-                margin: const EdgeInsets.only(top: 2),
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  aircraft.primaryIdentifier,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: markerColor,
-                    fontSize: 9,
-                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                  ),
-                ),
-              ),
-          ],
+            )),
+          ),
         ),
-      ),
+        if (showLabel)
+          Positioned(
+            left: 100,
+            top: 8,
+            width: 66,
+            child: GestureDetector(
+                onTap: onTap,
+                child: _MapLabel(
+                    text: aircraft.primaryIdentifier, color: markerColor)),
+          ),
+      ]),
     );
   }
+}
+
+class _MapLabel extends StatelessWidget {
+  const _MapLabel({required this.text, required this.color});
+  final String text;
+  final Color color;
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface.withOpacity(.58),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                color: color, fontSize: 10, fontWeight: FontWeight.w600)),
+      );
+}
+
+class _RouteMapSummary extends StatefulWidget {
+  const _RouteMapSummary(
+      {required this.route,
+      required this.count,
+      required this.onClear,
+      super.key});
+  final AircraftRoute route;
+  final int count;
+  final VoidCallback onClear;
+  @override
+  State<_RouteMapSummary> createState() => _RouteMapSummaryState();
+}
+
+class _RouteMapSummaryState extends State<_RouteMapSummary> {
+  bool _expanded = false;
+  @override
+  Widget build(BuildContext context) => Material(
+        key: const Key('routeMapSummary'),
+        color: Theme.of(context).colorScheme.surface.withOpacity(.82),
+        borderRadius: BorderRadius.circular(10),
+        clipBehavior: Clip.antiAlias,
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Row(children: [
+            Expanded(
+                child: InkWell(
+              key: const Key('routeSummaryToggle'),
+              onTap: () => setState(() => _expanded = !_expanded),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 6, 4, 6),
+                child: Row(children: [
+                  const Icon(Icons.route, size: 16),
+                  const SizedBox(width: 6),
+                  Expanded(
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                        Text('${widget.route.label} · ${widget.count} in area',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.w600)),
+                        const Text('Airport connection',
+                            style: TextStyle(fontSize: 10)),
+                      ])),
+                  Icon(_expanded ? Icons.expand_less : Icons.expand_more,
+                      size: 20),
+                ]),
+              ),
+            )),
+            IconButton(
+                key: const Key('clearDisplayFilter'),
+                tooltip: 'Clear route filter',
+                onPressed: widget.onClear,
+                icon: const Icon(Icons.close, size: 18)),
+          ]),
+          if (_expanded)
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 100),
+              child: SingleChildScrollView(
+                  child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+                child: Text(
+                    '${widget.count} matching aircraft in the current tracking area. '
+                    'Airport connection only — not the actual flight track.',
+                    key: const Key('routeSummaryDetails'),
+                    style: const TextStyle(fontSize: 11)),
+              )),
+            ),
+        ]),
+      );
 }

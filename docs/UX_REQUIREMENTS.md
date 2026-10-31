@@ -87,3 +87,10 @@ Pinch apart/together or use +/− to zoom around the scan centre, down to a 0.25
 Zoomed radar supports one-finger pan and focal-point pinch zoom. Panning is limited to the acquired scan circle; it changes presentation only. Reset and new scan locations/ranges restore the full scope. Pan/zoom survive normal feed refreshes. Map panning more than 100 m from the scan centre offers a central crosshair and explicit Track here button; selecting it updates the tracking centre and requests aircraft for that area while retaining map zoom. Panning alone makes no requests.
 
 Radar, Map and Live Metrics have shared manual aircraft refresh controls with a ten-second minimum between manual request starts. All controls show busy/countdown states, deduplicate concurrent requests and retain cooldown after failures. Automatic polling retains its minimum 30-second interval; a manual refresh restarts that schedule. Existing provider failures and cached-data states remain visible. Live detail cards listen to controller updates and show last-known data honestly when an aircraft disappears from the snapshot.
+
+
+### Compact route map presentation (V0.4.3)
+
+Route airports use small hollow position dots with translucent code labels offset below and to either side. Aircraft use small heading-oriented symbols, a light selection outline and translucent callsign labels offset above/right. Symbols remain centred on the actual coordinates; visual reduction retains a 44-pixel aircraft tap target. Route fitting reserves space for map controls and offset labels.
+
+On Map, a compact translucent route strip replaces the large route information box and duplicate filter footer. It identifies the connection and current-area count, expands on tap to explain coverage and distinguish the connection from the actual track, and retains a clear-filter action. Other views retain their existing filter footer.
