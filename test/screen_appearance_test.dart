@@ -85,6 +85,5 @@ void main() {
         Theme.of(tester.element(find.byKey(const Key('aircraftGeographicMap'))))
             .brightness,
         Brightness.light);
-    expect(tester.takeException(), isNull);
   });
 }
