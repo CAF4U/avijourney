@@ -82,3 +82,7 @@ Enter airport pairs such as `LHR-LAX`, `LHR -> LAX` or `LHR → LAX`. The app re
 ## Search navigation (0.3.2)
 
 Search always shows a result list, including a single matching route. Category chips select flights, aircraft, airlines, routes or airports. Selecting a route/airline/airport opens its detail list inside search; matching aircraft can then be selected for individual details. Back returns to the original results and query. Search alone never changes the display filter. Map, track and filter actions are explicit. The airport/route reference and acquired-area limitations still apply.
+
+## Independent screen appearance (0.3.3)
+
+Radar and Map each have their own on-screen Dark/Light selector. A black-and-green radar can be combined with a light map, independently of the app shell. Both overrides persist across restart. Existing preferences retain their previous global appearance until a screen override is selected; unrelated settings updates preserve both overrides. Reset settings removes the overrides.

@@ -18,6 +18,8 @@ class SharedPreferencesAppStore implements AppPreferencesStore {
   static const _maximumAltitude = 'maximum_altitude_feet';
   static const _showTrails = 'show_trails';
   static const _showLabels = 'show_labels';
+  static const _radarAppearance = 'radar_appearance';
+  static const _mapAppearance = 'map_appearance';
   static const _appearance = 'appearance';
   static const _savedOnly = 'saved_only';
   static const _savedAircraft = 'saved_aircraft';
@@ -41,6 +43,12 @@ class SharedPreferencesAppStore implements AppPreferencesStore {
               orElse: () => TrackingCenterType.defaultLocation,
             ),
           );
+    AppAppearance? screenAppearance(String key) =>
+        switch (preferences.getString(key)) {
+          'light' => AppAppearance.light,
+          'dark' => AppAppearance.dark,
+          _ => null,
+        };
     return PersistedAppState(
       trackingCenter: center,
       settings: AppSettings(
@@ -52,6 +60,8 @@ class SharedPreferencesAppStore implements AppPreferencesStore {
         showTrails: preferences.getBool(_showTrails) ?? true,
         showLabels: preferences.getBool(_showLabels) ?? true,
         savedOnly: preferences.getBool(_savedOnly) ?? false,
+        radarAppearance: screenAppearance(_radarAppearance),
+        mapAppearance: screenAppearance(_mapAppearance),
         appearance: preferences.getString(_appearance) == 'light'
             ? AppAppearance.light
             : AppAppearance.dark,
@@ -84,6 +94,14 @@ class SharedPreferencesAppStore implements AppPreferencesStore {
       preferences.setBool(_showLabels, state.settings.showLabels),
       preferences.setBool(_savedOnly, state.settings.savedOnly),
       preferences.setString(_appearance, state.settings.appearance.name),
+      state.settings.radarAppearance == null
+          ? preferences.remove(_radarAppearance)
+          : preferences.setString(
+              _radarAppearance, state.settings.radarAppearance!.name),
+      state.settings.mapAppearance == null
+          ? preferences.remove(_mapAppearance)
+          : preferences.setString(
+              _mapAppearance, state.settings.mapAppearance!.name),
       preferences.setStringList(
           _savedAircraft, state.savedAircraft.toList(growable: false)),
       preferences.setStringList(_followedItems,

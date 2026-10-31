@@ -78,7 +78,9 @@ void main() {
     app.pause();
     await tester.tap(find.byTooltip('Filters and settings'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Light'));
+    await tester.tap(find.descendant(
+        of: find.byKey(const Key('appearanceSetting')),
+        matching: find.text('Light')));
     await tester.pumpAndSettle();
     expect(app.settings.appearance, AppAppearance.light);
     expect(tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode,
@@ -87,7 +89,9 @@ void main() {
         .widget<CustomPaint>(find.byKey(const Key('radarCanvas')))
         .painter as RadarPainter;
     expect(painter.brightness, Brightness.light);
-    await tester.tap(find.text('Dark'));
+    await tester.tap(find.descendant(
+        of: find.byKey(const Key('appearanceSetting')),
+        matching: find.text('Dark')));
     await tester.pumpAndSettle();
     expect(app.settings.appearance, AppAppearance.dark);
   });

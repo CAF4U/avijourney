@@ -1,6 +1,9 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/theme/screen_appearance_toggle.dart';
+import '../../domain/models/app_settings.dart';
 
 import '../../app/app_controller.dart';
 import '../../domain/models/tracked_aircraft.dart';
@@ -17,7 +20,13 @@ class RadarView extends StatelessWidget {
   final VoidCallback onOpenTrackingLocation;
 
   @override
-  Widget build(BuildContext context) =>
+  Widget build(BuildContext context) => Theme(
+      data: controller.settings.effectiveRadarAppearance == AppAppearance.dark
+          ? AppTheme.dark()
+          : AppTheme.light(),
+      child: Builder(builder: _buildRadar));
+
+  Widget _buildRadar(BuildContext context) =>
       LayoutBuilder(builder: (context, constraints) {
         final size = math
             .min(constraints.maxWidth, constraints.maxHeight - 62)
@@ -55,9 +64,17 @@ class RadarView extends StatelessWidget {
               ),
             ),
           ),
+          Positioned(
+              top: 12,
+              left: 12,
+              child: ScreenAppearanceToggle(
+                  screen: 'Radar',
+                  value: controller.settings.effectiveRadarAppearance,
+                  onChanged: (value) => controller.updateSettings(
+                      controller.settings.copyWith(radarAppearance: value)))),
           const Positioned(
             key: Key('radarNorthIndicator'),
-            top: 10,
+            top: 68,
             left: 0,
             right: 0,
             child: IgnorePointer(

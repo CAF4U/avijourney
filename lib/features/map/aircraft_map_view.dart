@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/theme/screen_appearance_toggle.dart';
+import '../../domain/models/app_settings.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -89,6 +92,15 @@ class _AircraftMapViewState extends State<AircraftMapView>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    return Theme(
+        data: widget.controller.settings.effectiveMapAppearance ==
+                AppAppearance.dark
+            ? AppTheme.dark()
+            : AppTheme.light(),
+        child: Builder(builder: _buildMap));
+  }
+
+  Widget _buildMap(BuildContext context) {
     final viewport = widget.viewportController.viewport;
     final route = widget.controller.mapRoute;
     final light = Theme.of(context).brightness == Brightness.light;
@@ -218,6 +230,15 @@ class _AircraftMapViewState extends State<AircraftMapView>
                         child: Text(
                             '${route.label} · ${widget.controller.visibleAircraft.length} matching aircraft in current tracking area.\nAirport connection only — not the actual flight track.')))),
           Positioned(
+              top: 12,
+              left: 12,
+              child: ScreenAppearanceToggle(
+                  screen: 'Map',
+                  value: widget.controller.settings.effectiveMapAppearance,
+                  onChanged: (value) => widget.controller.updateSettings(widget
+                      .controller.settings
+                      .copyWith(mapAppearance: value)))),
+          Positioned(
             top: 12,
             right: 12,
             child: FloatingActionButton.small(
@@ -229,7 +250,7 @@ class _AircraftMapViewState extends State<AircraftMapView>
           ),
           if (widget.controller.isChoosingCenterOnMap)
             Positioned(
-              top: 12,
+              top: 72,
               left: 12,
               right: 64,
               child: Material(

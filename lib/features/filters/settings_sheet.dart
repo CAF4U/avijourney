@@ -34,7 +34,7 @@ class _SettingsSheet extends StatelessWidget {
                   icon: const Icon(Icons.close))
             ]),
             const SizedBox(height: 16),
-            const Text('Appearance'),
+            const Text('App appearance'),
             SegmentedButton<AppAppearance>(
               key: const Key('appearanceSetting'),
               segments: const [
@@ -51,6 +51,10 @@ class _SettingsSheet extends StatelessWidget {
               onSelectionChanged: (value) => controller.updateSettings(
                   controller.settings.copyWith(appearance: value.first)),
             ),
+            const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Text(
+                    'Radar and Map have their own Dark / Light controls on each screen. Reset settings restores their app-appearance defaults.')),
             ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.location_on_outlined),
