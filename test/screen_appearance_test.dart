@@ -43,8 +43,10 @@ void main() {
   testWidgets(
       'dark radar and light map coexist and survive tab navigation on a phone',
       (tester) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
     final app = fixtures.controller();
     addTearDown(app.dispose);
     await tester

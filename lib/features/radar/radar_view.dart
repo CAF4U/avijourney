@@ -31,100 +31,103 @@ class RadarView extends StatelessWidget {
         final size = math
             .min(constraints.maxWidth, constraints.maxHeight - 62)
             .clamp(240.0, 720.0);
-        return Stack(children: [
-          Center(
-            child: SizedBox.square(
-              dimension: size,
-              child: CustomPaint(
-                key: const Key('radarCanvas'),
-                painter: RadarPainter(
-                  aircraft: controller.visibleAircraft,
-                  selectedIcao24: controller.selectedIcao24,
-                  rangeNm: controller.settings.radarRangeNm,
-                  showLabels: controller.settings.showLabels,
-                  showTrails: controller.settings.showTrails,
-                  trackingCenter: controller.trackingCenter,
-                  brightness: Theme.of(context).brightness,
-                ),
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTapUp: (details) {
-                    final aircraft = _nearestAircraft(
-                      details.localPosition,
-                      Size.square(size),
-                    );
-                    if (aircraft == null) {
-                      controller.select(null);
-                      return;
-                    }
-                    controller.select(aircraft.state.icao24);
-                    showAircraftDetail(context, aircraft, controller);
-                  },
+        return ColoredBox(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: Stack(children: [
+              Center(
+                child: SizedBox.square(
+                  dimension: size,
+                  child: CustomPaint(
+                    key: const Key('radarCanvas'),
+                    painter: RadarPainter(
+                      aircraft: controller.visibleAircraft,
+                      selectedIcao24: controller.selectedIcao24,
+                      rangeNm: controller.settings.radarRangeNm,
+                      showLabels: controller.settings.showLabels,
+                      showTrails: controller.settings.showTrails,
+                      trackingCenter: controller.trackingCenter,
+                      brightness: Theme.of(context).brightness,
+                    ),
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapUp: (details) {
+                        final aircraft = _nearestAircraft(
+                          details.localPosition,
+                          Size.square(size),
+                        );
+                        if (aircraft == null) {
+                          controller.select(null);
+                          return;
+                        }
+                        controller.select(aircraft.state.icao24);
+                        showAircraftDetail(context, aircraft, controller);
+                      },
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          Positioned(
-              top: 12,
-              left: 12,
-              child: ScreenAppearanceToggle(
-                  screen: 'Radar',
-                  value: controller.settings.effectiveRadarAppearance,
-                  onChanged: (value) => controller.updateSettings(
-                      controller.settings.copyWith(radarAppearance: value)))),
-          const Positioned(
-            key: Key('radarNorthIndicator'),
-            top: 68,
-            left: 0,
-            right: 0,
-            child: IgnorePointer(
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Text('N',
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.4)),
-                Icon(Icons.north, size: 17),
-              ]),
-            ),
-          ),
-          Positioned(
-              top: 14,
-              right: 14,
-              child: PopupMenuButton<int>(
-                  tooltip: 'Select radar range',
-                  initialValue: controller.settings.radarRangeNm,
-                  onSelected: controller.setRadarRange,
-                  itemBuilder: (_) => const [20, 80, 140, 200]
-                      .map((range) =>
-                          PopupMenuItem(value: range, child: Text('$range NM')))
-                      .toList(),
-                  child: Container(
-                      key: const Key('rangeBadge'),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          border: Border.all(
-                              color: Theme.of(context).colorScheme.primary),
-                          borderRadius: BorderRadius.circular(22)),
-                      child: Text('${controller.settings.radarRangeNm} NM',
-                          style:
-                              const TextStyle(fontWeight: FontWeight.bold))))),
-          Positioned(
-              left: 16,
-              bottom: 14,
-              child: InkWell(
-                  key: const Key('radarCenterControl'),
-                  onTap: onOpenTrackingLocation,
-                  borderRadius: BorderRadius.circular(8),
-                  child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Text(
-                          'CENTER · ${controller.trackingCenter.label.toUpperCase()}\n${controller.feedName.toUpperCase()} POSITION FEED',
-                          style: const TextStyle(
-                              fontSize: 10, letterSpacing: 1.1))))),
-        ]);
+              Positioned(
+                  top: 12,
+                  left: 12,
+                  child: ScreenAppearanceToggle(
+                      screen: 'Radar',
+                      value: controller.settings.effectiveRadarAppearance,
+                      onChanged: (value) => controller.updateSettings(controller
+                          .settings
+                          .copyWith(radarAppearance: value)))),
+              const Positioned(
+                key: Key('radarNorthIndicator'),
+                top: 68,
+                left: 0,
+                right: 0,
+                child: IgnorePointer(
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Text('N',
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.4)),
+                    Icon(Icons.north, size: 17),
+                  ]),
+                ),
+              ),
+              Positioned(
+                  top: 14,
+                  right: 14,
+                  child: PopupMenuButton<int>(
+                      tooltip: 'Select radar range',
+                      initialValue: controller.settings.radarRangeNm,
+                      onSelected: controller.setRadarRange,
+                      itemBuilder: (_) => const [20, 80, 140, 200]
+                          .map((range) => PopupMenuItem(
+                              value: range, child: Text('$range NM')))
+                          .toList(),
+                      child: Container(
+                          key: const Key('rangeBadge'),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surface,
+                              border: Border.all(
+                                  color: Theme.of(context).colorScheme.primary),
+                              borderRadius: BorderRadius.circular(22)),
+                          child: Text('${controller.settings.radarRangeNm} NM',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold))))),
+              Positioned(
+                  left: 16,
+                  bottom: 14,
+                  child: InkWell(
+                      key: const Key('radarCenterControl'),
+                      onTap: onOpenTrackingLocation,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Text(
+                              'CENTER · ${controller.trackingCenter.label.toUpperCase()}\n${controller.feedName.toUpperCase()} POSITION FEED',
+                              style: const TextStyle(
+                                  fontSize: 10, letterSpacing: 1.1))))),
+            ]));
       });
 
   TrackedAircraft? _nearestAircraft(Offset tap, Size size) {
