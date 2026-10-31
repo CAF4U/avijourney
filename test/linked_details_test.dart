@@ -149,7 +149,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('No matching aircraft in acquired data'),
         findsOneWidget);
-    await tester.testTextInput.hide();
+    tester.testTextInput.hide();
     await tapVisible(tester, 'airportShowMap');
     expect(find.byKey(const Key('aircraftGeographicMap')), findsOneWidget);
     final map = tester

@@ -123,7 +123,7 @@ class _AirportDetailPageState extends State<AirportDetailPage> {
               const SizedBox(height: 12),
               FilledButton.icon(
                   key: const Key('airportShowMap'),
-                  onPressed: canMap ? () => navigation!.airport(airport) : null,
+                  onPressed: canMap ? () => navigation.airport(airport) : null,
                   icon: const Icon(Icons.map_outlined),
                   label: const Text('Show on map / scan around airport')),
               ExpansionTile(
