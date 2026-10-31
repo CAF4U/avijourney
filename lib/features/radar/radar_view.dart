@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/manual_refresh_button.dart';
 import '../../core/theme/screen_appearance_toggle.dart';
 import '../../domain/models/app_settings.dart';
 
@@ -27,6 +28,8 @@ class _RadarViewState extends State<RadarView> {
   AppController get controller => widget.controller;
   double _zoom = 1;
   double _gestureStartZoom = 1;
+  Offset _viewOffsetNm = Offset.zero;
+  Offset _gestureAnchorNm = Offset.zero;
   late int _scanRange;
   late TrackingCenter _scanCenter;
   double get _maxZoom => controller.settings.radarRangeNm / .25;
@@ -47,13 +50,29 @@ class _RadarViewState extends State<RadarView> {
         _scanCenter.latitude != center.latitude ||
         _scanCenter.longitude != center.longitude) {
       _zoom = 1;
+      _viewOffsetNm = Offset.zero;
       _scanRange = controller.settings.radarRangeNm;
       _scanCenter = center;
     }
   }
 
-  void _setZoom(double value) =>
-      setState(() => _zoom = value.clamp(1.0, _maxZoom).toDouble());
+  Offset _clampOffset(Offset value) {
+    final limit = math.max(0.0, controller.settings.radarRangeNm - _viewRange);
+    return value.distance > limit && value.distance > 0
+        ? value * (limit / value.distance)
+        : value;
+  }
+
+  void _setZoom(double value) => setState(() {
+        _zoom = value.clamp(1.0, _maxZoom).toDouble();
+        _viewOffsetNm = _clampOffset(_viewOffsetNm);
+      });
+
+  Offset _focalNm(Offset focal, double size) {
+    final delta = focal - Offset(size / 2, size / 2);
+    final scale = (size / 2 - 8) / _viewRange;
+    return Offset(delta.dx / scale, -delta.dy / scale);
+  }
 
   String get _viewRangeLabel =>
       _viewRange.toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), '');
@@ -82,6 +101,7 @@ class _RadarViewState extends State<RadarView> {
                       aircraft: controller.visibleAircraft,
                       selectedIcao24: controller.selectedIcao24,
                       rangeNm: _viewRange,
+                      viewOffsetNm: _viewOffsetNm,
                       showLabels: controller.settings.showLabels,
                       showTrails: controller.settings.showTrails,
                       trackingCenter: controller.trackingCenter,
@@ -89,9 +109,18 @@ class _RadarViewState extends State<RadarView> {
                     ),
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onScaleStart: (_) => _gestureStartZoom = _zoom,
-                      onScaleUpdate: (details) =>
-                          _setZoom(_gestureStartZoom * details.scale),
+                      onScaleStart: (details) {
+                        _gestureStartZoom = _zoom;
+                        _gestureAnchorNm = _viewOffsetNm +
+                            _focalNm(details.localFocalPoint, size);
+                      },
+                      onScaleUpdate: (details) => setState(() {
+                        _zoom = (_gestureStartZoom * details.scale)
+                            .clamp(1.0, _maxZoom)
+                            .toDouble();
+                        _viewOffsetNm = _clampOffset(_gestureAnchorNm -
+                            _focalNm(details.localFocalPoint, size));
+                      }),
                       onTapUp: (details) {
                         final aircraft = _nearestAircraft(
                           details.localPosition,
@@ -158,6 +187,16 @@ class _RadarViewState extends State<RadarView> {
                                   fontWeight: FontWeight.bold))))),
               Positioned(
                 right: 12,
+                top: 68,
+                child: Material(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(24),
+                  child: ManualRefreshButton(
+                      controller: controller, surface: 'radar'),
+                ),
+              ),
+              Positioned(
+                right: 12,
                 bottom: 100,
                 child: Material(
                   color: Theme.of(context).colorScheme.surface,
@@ -192,7 +231,8 @@ class _RadarViewState extends State<RadarView> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     color: Theme.of(context).colorScheme.surface,
-                    child: Text('VIEW · $_viewRangeLabel NM radius',
+                    child: Text(
+                        '${_viewOffsetNm.distance > .001 ? 'PANNED · ' : ''}VIEW · $_viewRangeLabel NM radius',
                         key: const Key('radarViewRange'),
                         style: const TextStyle(fontSize: 11)),
                   ),
@@ -248,7 +288,8 @@ class _RadarViewState extends State<RadarView> {
     var distance = 28.0;
     for (final aircraft in controller.visibleAircraft) {
       final point = RadarPainter.positionFor(
-          aircraft, controller.trackingCenter, size, _viewRange);
+          aircraft, controller.trackingCenter, size, _viewRange,
+          viewOffsetNm: _viewOffsetNm);
       final candidate = (tap - point).distance;
       if (candidate < distance &&
           (point - size.center(Offset.zero)).distance <= radius) {
@@ -268,22 +309,27 @@ class RadarPainter extends CustomPainter {
       required this.showLabels,
       required this.showTrails,
       required this.trackingCenter,
+      this.viewOffsetNm = Offset.zero,
       this.brightness = Brightness.dark});
   final List<TrackedAircraft> aircraft;
   final String? selectedIcao24;
   final double rangeNm;
+  final Offset viewOffsetNm;
   final bool showLabels;
   final bool showTrails;
   final TrackingCenter trackingCenter;
   final Brightness brightness;
 
   static Offset positionFor(TrackedAircraft aircraft,
-          TrackingCenter trackingCenter, Size size, num rangeNm) =>
+          TrackingCenter trackingCenter, Size size, num rangeNm,
+          {Offset viewOffsetNm = Offset.zero}) =>
       positionForCoordinates(aircraft.state.latitude, aircraft.state.longitude,
-          trackingCenter, size, rangeNm);
+          trackingCenter, size, rangeNm,
+          viewOffsetNm: viewOffsetNm);
 
   static Offset positionForCoordinates(double latitude, double longitude,
-      TrackingCenter trackingCenter, Size size, num rangeNm) {
+      TrackingCenter trackingCenter, Size size, num rangeNm,
+      {Offset viewOffsetNm = Offset.zero}) {
     const nmPerLatitudeDegree = 60.0;
     final longitudeNm = (longitude - trackingCenter.longitude) *
         60 *
@@ -291,8 +337,8 @@ class RadarPainter extends CustomPainter {
     final latitudeNm =
         (latitude - trackingCenter.latitude) * nmPerLatitudeDegree;
     final scale = (size.shortestSide / 2 - 8) / rangeNm;
-    return Offset(size.width / 2 + longitudeNm * scale,
-        size.height / 2 - latitudeNm * scale);
+    return Offset(size.width / 2 + (longitudeNm - viewOffsetNm.dx) * scale,
+        size.height / 2 - (latitudeNm - viewOffsetNm.dy) * scale);
   }
 
   @override
@@ -319,12 +365,17 @@ class RadarPainter extends CustomPainter {
         Offset(center.dx, center.dy + radius), grid);
     canvas.drawLine(Offset(center.dx - radius, center.dy),
         Offset(center.dx + radius, center.dy), grid);
-    canvas.drawCircle(center, 3, Paint()..color = targetColor);
+    final scanCenter = positionForCoordinates(trackingCenter.latitude,
+        trackingCenter.longitude, trackingCenter, size, rangeNm,
+        viewOffsetNm: viewOffsetNm);
+    if ((scanCenter - center).distance <= radius)
+      canvas.drawCircle(scanCenter, 3, Paint()..color = targetColor);
     canvas.save();
     canvas.clipPath(
         Path()..addOval(Rect.fromCircle(center: center, radius: radius)));
     for (final target in aircraft) {
-      final point = positionFor(target, trackingCenter, size, rangeNm);
+      final point = positionFor(target, trackingCenter, size, rangeNm,
+          viewOffsetNm: viewOffsetNm);
       if ((point - center).distance > radius) continue;
       final selected = target.state.icao24 == selectedIcao24;
       if (showTrails && target.trail.length > 1) {
@@ -332,7 +383,8 @@ class RadarPainter extends CustomPainter {
         for (var index = 0; index < target.trail.length; index++) {
           final observation = target.trail[index];
           final trailPoint = positionForCoordinates(observation.latitude,
-              observation.longitude, trackingCenter, size, rangeNm);
+              observation.longitude, trackingCenter, size, rangeNm,
+              viewOffsetNm: viewOffsetNm);
           if (index == 0) {
             trailPath.moveTo(trailPoint.dx, trailPoint.dy);
           } else {
@@ -390,6 +442,7 @@ class RadarPainter extends CustomPainter {
       oldDelegate.aircraft != aircraft ||
       oldDelegate.selectedIcao24 != selectedIcao24 ||
       oldDelegate.rangeNm != rangeNm ||
+      oldDelegate.viewOffsetNm != viewOffsetNm ||
       oldDelegate.showLabels != showLabels ||
       oldDelegate.showTrails != showTrails ||
       oldDelegate.trackingCenter != trackingCenter;

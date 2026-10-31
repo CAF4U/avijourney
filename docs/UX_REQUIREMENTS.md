@@ -80,3 +80,10 @@ Aircraft section headings, model/type and registration open the physical aircraf
 ### Radar zoom (V0.4.1)
 
 Pinch apart/together or use +/− to zoom around the scan centre, down to a 0.25 NM displayed radius. Aircraft markers, label fonts and tap tolerance stay the same screen size while geographical spacing increases. The VIEW scale shows the displayed radius; the existing range badge controls acquisition coverage. Zoom is presentation only: it never changes scan range, alert area or provider cadence. Reset restores the full scan area. Feed refreshes and tab changes preserve zoom; a new scan centre or range restores the full area. Radar targets/trails are clipped to the scope and tap selection uses the zoomed positions.
+
+
+### View navigation and manual refresh (V0.4.2)
+
+Zoomed radar supports one-finger pan and focal-point pinch zoom. Panning is limited to the acquired scan circle; it changes presentation only. Reset and new scan locations/ranges restore the full scope. Pan/zoom survive normal feed refreshes. Map panning more than 100 m from the scan centre offers a central crosshair and explicit Track here button; selecting it updates the tracking centre and requests aircraft for that area while retaining map zoom. Panning alone makes no requests.
+
+Radar, Map and Live Metrics have shared manual aircraft refresh controls with a ten-second minimum between manual request starts. All controls show busy/countdown states, deduplicate concurrent requests and retain cooldown after failures. Automatic polling retains its minimum 30-second interval; a manual refresh restarts that schedule. Existing provider failures and cached-data states remain visible. Live detail cards listen to controller updates and show last-known data honestly when an aircraft disappears from the snapshot.

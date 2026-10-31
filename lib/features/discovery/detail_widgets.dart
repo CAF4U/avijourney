@@ -6,8 +6,10 @@ class DetailSection extends StatelessWidget {
       required this.rows,
       this.actions = const {},
       this.onTitleTap,
+      this.trailing,
       super.key});
   final String title;
+  final Widget? trailing;
   final Map<String, String> rows;
   final Map<String, VoidCallback> actions;
   final VoidCallback? onTitleTap;
@@ -19,9 +21,13 @@ class DetailSection extends StatelessWidget {
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             if (onTitleTap == null)
-              Text(title,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, letterSpacing: 1.2))
+              Row(children: [
+                Expanded(
+                    child: Text(title,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, letterSpacing: 1.2))),
+                if (trailing != null) trailing!,
+              ])
             else
               InkWell(
                   key: Key('detailTitle-$title'),

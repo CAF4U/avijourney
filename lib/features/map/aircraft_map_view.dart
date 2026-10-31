@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/manual_refresh_button.dart';
 import '../../core/theme/screen_appearance_toggle.dart';
 import '../../domain/models/app_settings.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -43,6 +44,7 @@ class _AircraftMapViewState extends State<AircraftMapView>
       widget.mapController ?? MapController();
   late double _zoom = widget.viewportController.viewport.zoom;
   bool _mapReady = false;
+  bool _showTrackHere = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -64,6 +66,7 @@ class _AircraftMapViewState extends State<AircraftMapView>
 
   void _moveToExternalViewport() {
     if (!_mapReady) return;
+    if (_showTrackHere) setState(() => _showTrackHere = false);
     final viewport = widget.viewportController.viewport;
     if (viewport.route case final route? when route.hasCoordinates) {
       _mapController.fitCamera(_routeFit(route));
@@ -133,14 +136,23 @@ class _AircraftMapViewState extends State<AircraftMapView>
                     InteractiveFlag.flingAnimation,
               ),
               onLongPress: (_, point) => _setCenterFromMap(point),
-              onPositionChanged: (camera, _) {
+              onPositionChanged: (camera, hasGesture) {
                 widget.viewportController.updateFromMap(MapViewport(
                   latitude: camera.center.latitude,
                   longitude: camera.center.longitude,
                   zoom: camera.zoom,
                 ));
-                if ((_zoom >= 9) != (camera.zoom >= 9)) {
-                  setState(() => _zoom = camera.zoom);
+                final scan = widget.controller.trackingCenter;
+                final away = const Distance().as(LengthUnit.Meter,
+                        LatLng(scan.latitude, scan.longitude), camera.center) >
+                    100;
+                final show = hasGesture ? away : _showTrackHere && away;
+                if ((_zoom >= 9) != (camera.zoom >= 9) ||
+                    show != _showTrackHere) {
+                  setState(() {
+                    _zoom = camera.zoom;
+                    _showTrackHere = show;
+                  });
                 } else {
                   _zoom = camera.zoom;
                 }
@@ -225,6 +237,23 @@ class _AircraftMapViewState extends State<AircraftMapView>
               ),
             ],
           ),
+          if (_showTrackHere) ...[
+            const Center(
+                child: IgnorePointer(child: Icon(Icons.add, size: 30))),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 24,
+              child: Center(
+                  child: FilledButton.icon(
+                key: const Key('trackMapHere'),
+                onPressed: () =>
+                    _setCenterFromMap(_mapController.camera.center),
+                icon: const Icon(Icons.radar),
+                label: const Text('Track here'),
+              )),
+            ),
+          ],
           if (route != null)
             Positioned(
                 left: 12,
@@ -252,6 +281,16 @@ class _AircraftMapViewState extends State<AircraftMapView>
               tooltip: 'Re-centre on tracking location',
               onPressed: _recenter,
               child: const Icon(Icons.center_focus_strong),
+            ),
+          ),
+          Positioned(
+            top: 68,
+            right: 12,
+            child: Material(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(24),
+              child: ManualRefreshButton(
+                  controller: widget.controller, surface: 'map'),
             ),
           ),
           if (widget.controller.isChoosingCenterOnMap)
@@ -289,6 +328,7 @@ class _AircraftMapViewState extends State<AircraftMapView>
   }
 
   void _setCenterFromMap(LatLng point) {
+    setState(() => _showTrackHere = false);
     unawaited(widget.controller.setTrackingCenter(TrackingCenter(
       latitude: point.latitude,
       longitude: point.longitude,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/app_controller.dart';
+import '../../core/widgets/manual_refresh_button.dart';
 import '../../app/alerts/foreground_alert_engine.dart';
 import '../../app/navigation/detail_navigation.dart';
 import '../discovery/detail_widgets.dart';
@@ -18,24 +19,43 @@ Future<void> showAircraftDetail(BuildContext context, TrackedAircraft aircraft,
             child:
                 _AircraftDetail(aircraft: aircraft, controller: controller)));
 
-class _AircraftDetail extends StatelessWidget {
+class _AircraftDetail extends StatefulWidget {
   const _AircraftDetail({required this.aircraft, required this.controller});
   final TrackedAircraft aircraft;
   final AppController controller;
 
   @override
-  Widget build(BuildContext context) {
-    final state = aircraft.state;
-    final identity = aircraft.identity;
-    final route = aircraft.route;
-    final origin = aircraft.flight?.origin ?? route?.origin;
-    final destination = aircraft.flight?.destination ?? route?.destination;
-    final connection = detailRoute(aircraft, controller);
+  State<_AircraftDetail> createState() => _AircraftDetailState();
+}
+
+class _AircraftDetailState extends State<_AircraftDetail> {
+  AppController get controller => widget.controller;
+  TrackedAircraft get aircraft => widget.aircraft;
+  late TrackedAircraft _lastKnown = widget.aircraft;
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+        listenable: controller,
+        builder: (context, _) => _buildDetails(context),
+      );
+
+  Widget _buildDetails(BuildContext context) {
+    final latest = controller.aircraft
+        .where((item) => item.state.icao24 == aircraft.state.icao24)
+        .firstOrNull;
+    if (latest != null) _lastKnown = latest;
+    final current = _lastKnown;
+    final state = current.state;
+    final identity = current.identity;
+    final route = current.route;
+    final origin = current.flight?.origin ?? route?.origin;
+    final destination = current.flight?.destination ?? route?.destination;
+    final connection = detailRoute(current, controller);
     final navigation = DetailNavigation.maybeOf(context);
     return ListView(padding: const EdgeInsets.all(24), children: [
       Row(children: [
         Expanded(
-            child: Text(aircraft.primaryIdentifier,
+            child: Text(current.primaryIdentifier,
                 style: Theme.of(context).textTheme.headlineMedium)),
         IconButton(
             onPressed: () => controller.toggleSaved(state.icao24),
@@ -52,15 +72,15 @@ class _AircraftDetail extends StatelessWidget {
       const SizedBox(height: 20),
       DetailSection(
           title: 'AIRCRAFT',
-          onTitleTap: () => openAircraftProfile(context, aircraft, controller),
+          onTitleTap: () => openAircraftProfile(context, current, controller),
           actions: {
             if (identity?.operatorName case final name?)
               'Operator': () => openOperatorDetails(context, name, controller),
             if (identity != null)
               'Model / type': () =>
-                  openAircraftProfile(context, aircraft, controller),
+                  openAircraftProfile(context, current, controller),
             'Registration': () =>
-                openAircraftProfile(context, aircraft, controller),
+                openAircraftProfile(context, current, controller),
           },
           rows: {
             'Operator': identity?.operatorName ?? 'Unavailable',
@@ -92,22 +112,30 @@ class _AircraftDetail extends StatelessWidget {
                 : '${destination.displayCode} · ${destination.name}',
             'Provenance': route?.source ?? 'No verified route source'
           }),
-      DetailSection(title: 'LIVE METRICS', rows: {
-        'Altitude': '${state.altitudeFeet.round()} ft',
-        'Ground speed': '${state.groundSpeedKnots.round()} kt',
-        'Heading': '${state.trackDegrees.round()}°',
-        'Vertical rate': '${state.verticalRateFeetPerMinute.round()} ft/min',
-        'Squawk': state.squawk ?? 'Unavailable',
-        'Movement': estimatedMovement(state),
-        'Position timestamp':
-            state.positionTime?.toLocal().toString() ?? 'Unavailable',
-        'ACARS / OOOI':
-            'Not connected; OUT/IN cannot be established from speed or altitude',
-        'Position':
-            '${state.latitude.toStringAsFixed(4)}, ${state.longitude.toStringAsFixed(4)}'
-      }),
+      DetailSection(
+          title: 'LIVE METRICS',
+          trailing:
+              ManualRefreshButton(controller: controller, surface: 'metrics'),
+          rows: {
+            'Feed': latest == null
+                ? 'No longer in current snapshot · last known data'
+                : controller.feedStatus.name,
+            'Altitude': '${state.altitudeFeet.round()} ft',
+            'Ground speed': '${state.groundSpeedKnots.round()} kt',
+            'Heading': '${state.trackDegrees.round()}°',
+            'Vertical rate':
+                '${state.verticalRateFeetPerMinute.round()} ft/min',
+            'Squawk': state.squawk ?? 'Unavailable',
+            'Movement': estimatedMovement(state),
+            'Position timestamp':
+                state.positionTime?.toLocal().toString() ?? 'Unavailable',
+            'ACARS / OOOI':
+                'Not connected; OUT/IN cannot be established from speed or altitude',
+            'Position':
+                '${state.latitude.toStringAsFixed(4)}, ${state.longitude.toStringAsFixed(4)}'
+          }),
       DetailSection(title: 'OBSERVED HISTORY', rows: {
-        'Trail points': '${aircraft.trail.length}',
+        'Trail points': '${current.trail.length}',
         'Latest observation': state.observedAt.toLocal().toString()
       }),
     ]);

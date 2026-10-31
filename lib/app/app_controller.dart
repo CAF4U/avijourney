@@ -73,6 +73,36 @@ class AppController extends ChangeNotifier {
     unawaited(_persist());
   }
 
+  static const manualRefreshInterval = Duration(seconds: 10);
+  DateTime? _lastManualRefresh;
+  Timer? _manualRefreshTimer;
+  bool _disposed = false;
+  bool get isRefreshing => _activeRefresh != null;
+  int get manualRefreshSecondsRemaining {
+    final last = _lastManualRefresh;
+    if (last == null) return 0;
+    final remaining = manualRefreshInterval - _clock().difference(last);
+    return remaining.isNegative ? 0 : (remaining.inMilliseconds / 1000).ceil();
+  }
+
+  bool get canManuallyRefresh =>
+      !_disposed &&
+      _isActive &&
+      !isRefreshing &&
+      manualRefreshSecondsRemaining == 0;
+
+  Future<void> manualRefresh() {
+    if (!canManuallyRefresh) return _activeRefresh ?? Future<void>.value();
+    _lastManualRefresh = _clock();
+    _manualRefreshTimer?.cancel();
+    _manualRefreshTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (manualRefreshSecondsRemaining == 0) timer.cancel();
+      if (!_disposed) notifyListeners();
+    });
+    _scheduleRefresh();
+    return refresh();
+  }
+
   static const minimumRefreshInterval = Duration(seconds: 30);
   final AircraftRepository _repository;
   final AppPreferencesStore _preferencesStore;
@@ -189,8 +219,10 @@ class AppController extends ChangeNotifier {
     if (activeRefresh != null) return activeRefresh;
     final operation = _performRefresh();
     _activeRefresh = operation;
+    notifyListeners();
     return operation.whenComplete(() {
       if (identical(_activeRefresh, operation)) _activeRefresh = null;
+      if (!_disposed) notifyListeners();
     });
   }
 
@@ -236,7 +268,7 @@ class AppController extends ChangeNotifier {
       _alertEngine.resetBaseline();
       _feedStatus = _aircraft.isEmpty ? FeedStatus.error : FeedStatus.cached;
     }
-    notifyListeners();
+    if (!_disposed) notifyListeners();
   }
 
   List<TrackedAircraft> _mergeObservedHistory(List<TrackedAircraft> incoming) {
@@ -514,6 +546,8 @@ class AppController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
+    _manualRefreshTimer?.cancel();
     _refreshTimer?.cancel();
     weather.dispose();
     super.dispose();

@@ -48,6 +48,37 @@ Future<AppController> mountRadar(
 
 void main() {
   testWidgets(
+      'zoomed radar pans without changing scan centre or acquisition and selects shifted targets',
+      (tester) async {
+    final positions = CountingPositions();
+    final controller = await mountRadar(tester, positions);
+    final originalCenter = controller.trackingCenter;
+    await tester.tap(find.byKey(const Key('radarZoomIn')));
+    await tester.pump();
+    final canvas = find.byKey(const Key('radarCanvas'));
+    await tester.drag(canvas, const Offset(60, 30));
+    await tester.pump();
+    final view = painter(tester);
+    expect(view.viewOffsetNm.distance, greaterThan(0));
+    expect(controller.trackingCenter, same(originalCenter));
+    expect(positions.requests, 1);
+    expect(controller.selectedIcao24, isNull);
+    final target = controller.visibleAircraft.first;
+    final point = RadarPainter.positionFor(
+        target, controller.trackingCenter, tester.getSize(canvas), view.rangeNm,
+        viewOffsetNm: view.viewOffsetNm);
+    await tester.tapAt(tester.getTopLeft(canvas) + point);
+    await tester.pumpAndSettle();
+    expect(controller.selectedIcao24, target.state.icao24);
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('radarZoomReset')));
+    await tester.pump();
+    expect(painter(tester).viewOffsetNm, Offset.zero);
+    expect(painter(tester).rangeNm, 20);
+  });
+
+  testWidgets(
       'zoom separates targets without enlarging markers or acquiring data; tap uses displayed positions',
       (tester) async {
     final positions = CountingPositions();
