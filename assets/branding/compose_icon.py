@@ -9,9 +9,16 @@ layer=Image.new('RGBA',(base.width*scale,base.height*scale))
 d=ImageDraw.Draw(layer)
 def box(cx,cy,r):return tuple(round(v*scale) for v in (cx-r,cy-r,cx+r,cy+r))
 # Only the two new black pictograms are drawn. The approved raster is untouched.
-for r in [82,54,26]: d.ellipse(box(224,525,r),outline='black',width=8*scale)
-d.line([(224*scale,525*scale),(281*scale,468*scale)],fill='black',width=9*scale)
-for x,y in [(199,484),(265,551)]:d.ellipse(box(x,y,9),fill='black')
+# Radar range rings and a swept sector, based on the supplied radar reference.
+# No crosshair axes and no central bullseye.
+for r in [82,58,34]:
+ d.ellipse(box(224,525,r),outline='black',width=(6 if r==82 else 4)*scale)
+d.pieslice(box(224,525,80),start=132,end=182,fill='black')
+for r in [58,34]:
+ d.arc(box(224,525,r),start=139,end=175,fill='white',width=4*scale)
+for x,y in [(181,484),(270,505),(238,584)]:
+ d.ellipse(box(x,y,8),fill='black')
+d.ellipse(box(168,544,6),fill='white')
 # Top-view aircraft silhouette, angled to the right.
 points=[(0,-92),(9,-82),(13,-25),(82,20),(82,39),(14,10),(12,67),(36,84),(36,98),(0,83),(-36,98),(-36,84),(-12,67),(-14,10),(-82,39),(-82,20),(-13,-25),(-9,-82)]
 a=math.radians(35)

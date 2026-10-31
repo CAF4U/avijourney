@@ -11,3 +11,5 @@ The source SHA-256 is `c067aa5cd622a326b20dd8e33eb280666a2300460e90dd54d9036826d
 `CAF4U_Aircraft_Companion_Symbol.png` retains transparency. The Light PNG is the same composition over white.
 Android launcher exports scale this composition, retain padding, and use a white square canvas.
 The app label is CAF4U Aircraft Companion; no text is embedded in the launcher icon.
+
+Radar refinement: the user-supplied radar reference informed a filled sweep sector, thinner range rings and irregular blips. Crosshair axes and the central bullseye are omitted. A pixel comparison against the previous composition confirmed that changes are restricted to the left radar area (145,446)-(303,604).
