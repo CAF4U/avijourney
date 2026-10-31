@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import '../core/theme/app_theme.dart';
+import '../domain/models/app_settings.dart';
+import '../domain/models/tracking_center.dart';
 import '../data/hexdb/hexdb_aircraft_enrichment_provider.dart';
 import '../data/local/shared_preferences_app_store.dart';
 import '../data/local/bundled_airport_search_provider.dart';
@@ -46,11 +48,15 @@ class _AviJourneyAppState extends State<AviJourneyApp>
       widget.mapViewportController ??
           MapViewportController(MapViewport.around(controller.trackingCenter));
 
+  late TrackingCenter _lastTrackingCenter;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _initialize();
+    _lastTrackingCenter = controller.trackingCenter;
+    controller.addListener(_syncTrackingCenter);
+    controller.initialize();
   }
 
   AppController _buildController() {
@@ -83,12 +89,17 @@ class _AviJourneyAppState extends State<AviJourneyApp>
     );
   }
 
-  Future<void> _initialize() async {
-    await controller.initialize();
-    if (widget.mapViewportController == null) {
-      mapViewportController
-          .update(MapViewport.around(controller.trackingCenter));
-    }
+  void _syncTrackingCenter() {
+    final center = controller.trackingCenter;
+    if (identical(center, _lastTrackingCenter)) return;
+    _lastTrackingCenter = center;
+    mapViewportController.update(MapViewport(
+      latitude: center.latitude,
+      longitude: center.longitude,
+      zoom: center.type == TrackingCenterType.map
+          ? mapViewportController.viewport.zoom
+          : 9,
+    ));
   }
 
   @override
@@ -103,6 +114,7 @@ class _AviJourneyAppState extends State<AviJourneyApp>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    controller.removeListener(_syncTrackingCenter);
     if (widget.controller == null) controller.dispose();
     if (widget.mapViewportController == null) mapViewportController.dispose();
     _httpClient?.close();
@@ -111,16 +123,22 @@ class _AviJourneyAppState extends State<AviJourneyApp>
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'AviJourney',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark(),
-      home: HomeShell(
-        controller: controller,
-        mapViewportController: mapViewportController,
-        mapTileSource: const OpenStreetMapTileSource(),
-        showMapTiles: widget.showMapTiles,
-      ),
-    );
+    return ListenableBuilder(
+        listenable: controller,
+        builder: (context, _) => MaterialApp(
+              title: 'CAF4U Aircraft Companion',
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.light(),
+              darkTheme: AppTheme.dark(),
+              themeMode: controller.settings.appearance == AppAppearance.light
+                  ? ThemeMode.light
+                  : ThemeMode.dark,
+              home: HomeShell(
+                controller: controller,
+                mapViewportController: mapViewportController,
+                mapTileSource: const OpenStreetMapTileSource(),
+                showMapTiles: widget.showMapTiles,
+              ),
+            ));
   }
 }

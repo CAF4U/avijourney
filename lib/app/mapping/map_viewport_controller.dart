@@ -1,12 +1,14 @@
 import 'package:flutter/foundation.dart';
 
 import '../../domain/models/tracking_center.dart';
+import '../../domain/models/aircraft_route.dart';
 
 class MapViewport {
   const MapViewport({
     required this.latitude,
     required this.longitude,
     required this.zoom,
+    this.route,
   });
 
   factory MapViewport.around(TrackingCenter center) => MapViewport(
@@ -18,6 +20,7 @@ class MapViewport {
   final double latitude;
   final double longitude;
   final double zoom;
+  final AircraftRoute? route;
 }
 
 class MapViewportController extends ChangeNotifier {

@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 
 import '../core/errors/provider_exception.dart';
 import '../domain/models/airport.dart';
+import '../domain/models/aircraft_filter.dart';
+import '../domain/models/aircraft_route.dart';
 import '../domain/models/app_settings.dart';
 import '../domain/models/tracked_aircraft.dart';
 import '../domain/models/followed_item.dart';
@@ -71,12 +73,46 @@ class AppController extends ChangeNotifier {
   bool get isChoosingCenterOnMap => _isChoosingCenterOnMap;
   String? get locationMessage => _locationMessage;
 
-  List<TrackedAircraft> get visibleAircraft => _aircraft.where((aircraft) {
-        final altitude = aircraft.state.altitudeFeet;
-        return altitude >= _settings.minimumAltitudeFeet &&
-            altitude <= _settings.maximumAltitudeFeet &&
-            (!_settings.savedOnly || _saved.contains(aircraft.state.icao24));
-      }).toList(growable: false);
+  AircraftFilter? _displayFilter;
+  AircraftRoute? _mapRoute;
+  AircraftRoute? get mapRoute => _mapRoute;
+
+  void showRoute(AircraftRoute route, {required bool onMap}) {
+    _displayFilter = AircraftFilter(
+        label: 'Route: ${route.label}',
+        routeOrigin: route.origin,
+        routeDestination: route.destination);
+    _mapRoute = onMap ? route : null;
+    notifyListeners();
+  }
+
+  AircraftFilter? get displayFilter => _displayFilter;
+
+  void setDisplayFilter(AircraftFilter? filter) {
+    _displayFilter = filter;
+    _mapRoute = null;
+    notifyListeners();
+  }
+
+  List<TrackedAircraft> get visibleAircraft {
+    final filter = _displayFilter;
+    final queryMatches = filter?.query == null
+        ? <String>{}
+        : search(filter!.query!)
+            .where((r) => r.type == SearchResultType.aircraft)
+            .map((r) => r.identifier.toUpperCase())
+            .toSet();
+    return _aircraft.where((aircraft) {
+      final altitude = aircraft.state.altitudeFeet;
+      return altitude >= _settings.minimumAltitudeFeet &&
+          altitude <= _settings.maximumAltitudeFeet &&
+          (!_settings.savedOnly || _saved.contains(aircraft.state.icao24)) &&
+          (filter == null ||
+              filter.matches(aircraft,
+                  matchesQuery: queryMatches
+                      .contains(aircraft.state.icao24.toUpperCase())));
+    }).toList(growable: false);
+  }
 
   Future<void> initialize() async {
     try {
@@ -128,11 +164,13 @@ class AppController extends ChangeNotifier {
       notifyListeners();
     }
     try {
+      final requestedCenter = _trackingCenter;
       final result = await _repository.loadNearby(
         centerLatitude: _trackingCenter.latitude,
         centerLongitude: _trackingCenter.longitude,
         radiusNauticalMiles: _settings.radarRangeNm.toDouble(),
       );
+      if (!identical(requestedCenter, _trackingCenter)) return;
       _aircraft = _mergeObservedHistory(result);
       _feedStatus = FeedStatus.live;
     } on ProviderException catch (error) {
@@ -192,6 +230,7 @@ class AppController extends ChangeNotifier {
 
   Future<void> setTrackingCenter(TrackingCenter center) async {
     _trackingCenter = center;
+    _aircraft = const [];
     _isChoosingCenterOnMap = false;
     _locationMessage = null;
     notifyListeners();
@@ -229,6 +268,25 @@ class AppController extends ChangeNotifier {
     return result.status;
   }
 
+  List<Airport> get savedAirports {
+    final airports = <Airport>[];
+    for (final item
+        in _followedItems.where((i) => i.type == FollowedItemType.airport)) {
+      final code = item.identifier.toUpperCase();
+      final airport = searchAirports(code)
+          .where((a) =>
+              a.icao.toUpperCase() == code || a.iata?.toUpperCase() == code)
+          .firstOrNull;
+      if (airport != null &&
+          airport.latitude != null &&
+          airport.longitude != null) {
+        airports.add(airport);
+      }
+    }
+    airports.sort((a, b) => a.name.compareTo(b.name));
+    return airports;
+  }
+
   List<Airport> searchAirports(String query) =>
       _airportSearchProvider?.search(query) ?? const [];
 
@@ -236,7 +294,13 @@ class AppController extends ChangeNotifier {
         query: query,
         aircraft: _aircraft,
         airlines: _airlineSearchProvider.airlines,
-        airports: searchAirports(query),
+        airports: [
+          ...searchAirports(query),
+          if (UniversalSearchService.routeCodes(query) case final codes?) ...[
+            ...searchAirports(codes.$1),
+            ...searchAirports(codes.$2),
+          ],
+        ],
       );
 
   Future<void> chooseAirport(Airport airport) async {

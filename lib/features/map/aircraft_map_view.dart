@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/theme/screen_appearance_toggle.dart';
+import '../../domain/models/app_settings.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -11,6 +14,7 @@ import '../../app/mapping/map_tile_source.dart';
 import '../../app/mapping/map_viewport_controller.dart';
 import '../../domain/models/tracked_aircraft.dart';
 import '../../domain/models/tracking_center.dart';
+import '../../domain/models/aircraft_route.dart';
 import '../aircraft_detail/aircraft_detail_sheet.dart';
 
 class AircraftMapView extends StatefulWidget {
@@ -38,6 +42,7 @@ class _AircraftMapViewState extends State<AircraftMapView>
   late final MapController _mapController =
       widget.mapController ?? MapController();
   late double _zoom = widget.viewportController.viewport.zoom;
+  bool _mapReady = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -58,12 +63,27 @@ class _AircraftMapViewState extends State<AircraftMapView>
   }
 
   void _moveToExternalViewport() {
+    if (!_mapReady) return;
     final viewport = widget.viewportController.viewport;
+    if (viewport.route case final route? when route.hasCoordinates) {
+      _mapController.fitCamera(_routeFit(route));
+      return;
+    }
     _mapController.move(
       LatLng(viewport.latitude, viewport.longitude),
       viewport.zoom,
     );
   }
+
+  CameraFit _routeFit(AircraftRoute route) => CameraFit.bounds(
+      bounds: LatLngBounds.fromPoints([
+        LatLng(route.origin.latitude!, route.origin.longitude!),
+        LatLng(route.destination.latitude!, route.destination.longitude!),
+        ...widget.controller.visibleAircraft
+            .map((a) => LatLng(a.state.latitude, a.state.longitude)),
+      ]),
+      padding: const EdgeInsets.fromLTRB(48, 80, 48, 140),
+      maxZoom: 8);
 
   @override
   void dispose() {
@@ -74,18 +94,37 @@ class _AircraftMapViewState extends State<AircraftMapView>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    return Theme(
+        data: widget.controller.settings.effectiveMapAppearance ==
+                AppAppearance.dark
+            ? AppTheme.dark()
+            : AppTheme.light(),
+        child: Builder(builder: _buildMap));
+  }
+
+  Widget _buildMap(BuildContext context) {
     final viewport = widget.viewportController.viewport;
+    final route = widget.controller.mapRoute;
+    final light = Theme.of(context).brightness == Brightness.light;
     return ColoredBox(
-      color: const Color(0xFF07150D),
+      color: Theme.of(context).colorScheme.surface,
       child: Stack(
         children: [
           FlutterMap(
             key: const Key('aircraftGeographicMap'),
             mapController: _mapController,
             options: MapOptions(
+              onMapReady: () {
+                _mapReady = true;
+                _moveToExternalViewport();
+              },
               initialCenter: LatLng(viewport.latitude, viewport.longitude),
               initialZoom: viewport.zoom,
-              minZoom: 3,
+              minZoom: 1,
+              initialCameraFit:
+                  viewport.route != null && viewport.route!.hasCoordinates
+                      ? _routeFit(viewport.route!)
+                      : null,
               maxZoom: 19,
               interactionOptions: const InteractionOptions(
                 flags: InteractiveFlag.pinchZoom |
@@ -113,8 +152,45 @@ class _AircraftMapViewState extends State<AircraftMapView>
                   urlTemplate: widget.tileSource.urlTemplate,
                   userAgentPackageName: widget.tileSource.userAgentPackageName,
                   maxNativeZoom: widget.tileSource.maximumNativeZoom,
-                  tileBuilder: darkModeTileBuilder,
+                  tileBuilder: light ? null : darkModeTileBuilder,
                 ),
+              if (route != null && route.hasCoordinates) ...[
+                PolylineLayer(
+                    key: const Key('routeConnectionLayer'),
+                    polylines: [
+                      Polyline(
+                          points: [
+                            LatLng(route.origin.latitude!,
+                                route.origin.longitude!),
+                            LatLng(route.destination.latitude!,
+                                route.destination.longitude!)
+                          ],
+                          color: Theme.of(context).colorScheme.primary,
+                          strokeWidth: 3),
+                    ]),
+                MarkerLayer(markers: [
+                  for (final airport in [route.origin, route.destination])
+                    Marker(
+                        point: LatLng(airport.latitude!, airport.longitude!),
+                        width: 110,
+                        height: 54,
+                        child: Card(
+                            child: Padding(
+                                padding: const EdgeInsets.all(4),
+                                child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.local_airport,
+                                          size: 18,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary),
+                                      Text(airport.displayCode,
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold)),
+                                    ])))),
+                ]),
+              ],
               MarkerLayer(markers: [
                 Marker(
                   key: const Key('trackingCenterMarker'),
@@ -135,7 +211,7 @@ class _AircraftMapViewState extends State<AircraftMapView>
                 ),
               ),
               RichAttributionWidget(
-                popupBackgroundColor: const Color(0xEE09150E),
+                popupBackgroundColor: Theme.of(context).colorScheme.surface,
                 showFlutterMapAttribution: false,
                 attributions: [
                   TextSourceAttribution(
@@ -149,6 +225,25 @@ class _AircraftMapViewState extends State<AircraftMapView>
               ),
             ],
           ),
+          if (route != null)
+            Positioned(
+                left: 12,
+                right: 12,
+                bottom: 80,
+                child: Card(
+                    child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Text(
+                            '${route.label} · ${widget.controller.visibleAircraft.length} matching aircraft in current tracking area.\nAirport connection only — not the actual flight track.')))),
+          Positioned(
+              top: 12,
+              left: 12,
+              child: ScreenAppearanceToggle(
+                  screen: 'Map',
+                  value: widget.controller.settings.effectiveMapAppearance,
+                  onChanged: (value) => widget.controller.updateSettings(widget
+                      .controller.settings
+                      .copyWith(mapAppearance: value)))),
           Positioned(
             top: 12,
             right: 12,
@@ -161,11 +256,11 @@ class _AircraftMapViewState extends State<AircraftMapView>
           ),
           if (widget.controller.isChoosingCenterOnMap)
             Positioned(
-              top: 12,
+              top: 72,
               left: 12,
               right: 64,
               child: Material(
-                color: const Color(0xEE09150E),
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(8),
                 child: const Padding(
                   padding: EdgeInsets.all(10),
@@ -218,7 +313,7 @@ class _TrackingCenterMarker extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: const Color(0xCC09150E),
+            color: Theme.of(context).colorScheme.surface,
             border: Border.all(
                 color: Theme.of(context).colorScheme.secondary, width: 3),
           ),
@@ -286,7 +381,7 @@ class AircraftMapMarker extends StatelessWidget {
                 key: ValueKey('mapMarkerIcon-${aircraft.state.icao24}'),
                 padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
-                  color: const Color(0xE609150E),
+                  color: Theme.of(context).colorScheme.surface,
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: markerColor,
@@ -304,7 +399,7 @@ class AircraftMapMarker extends StatelessWidget {
                 margin: const EdgeInsets.only(top: 2),
                 padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xE609150E),
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(

@@ -1,4 +1,4 @@
-# AGENTS.md — AviJourney
+# AGENTS.md — CAF4U Aircraft Companion
 
 This repository is the clean Flutter/Dart successor to the FlightScope Tauri prototype.
 

@@ -13,6 +13,9 @@ Future<void> showTrackingLocationSheet(
       context: context,
       useSafeArea: true,
       showDragHandle: true,
+      isScrollControlled: true,
+      constraints:
+          BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * .85),
       builder: (context) => _TrackingLocationSheet(
         controller: controller,
         onChooseOnMap: onChooseOnMap,
@@ -38,7 +41,8 @@ class _TrackingLocationSheetState extends State<_TrackingLocationSheet> {
   @override
   Widget build(BuildContext context) => ListenableBuilder(
         listenable: widget.controller,
-        builder: (context, _) => Padding(
+        builder: (context, _) => SingleChildScrollView(
+            child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -60,6 +64,20 @@ class _TrackingLocationSheetState extends State<_TrackingLocationSheet> {
                           color: Theme.of(context).colorScheme.error)),
                 ),
               const SizedBox(height: 12),
+              if (widget.controller.savedAirports.isNotEmpty) ...[
+                Text('Saved airports',
+                    style: Theme.of(context).textTheme.titleSmall),
+                for (final airport in widget.controller.savedAirports)
+                  ListTile(
+                    key: Key('quickAirport-${airport.icao}'),
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.bookmark),
+                    title: Text('${airport.displayCode} · ${airport.name}'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _chooseAirport(airport),
+                  ),
+                const Divider(),
+              ],
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: _locating
@@ -82,10 +100,7 @@ class _TrackingLocationSheetState extends State<_TrackingLocationSheet> {
                     context: context,
                     delegate: _AirportSearchDelegate(widget.controller),
                   );
-                  if (airport != null) {
-                    await widget.controller.chooseAirport(airport);
-                    if (mounted) Navigator.pop(context);
-                  }
+                  if (airport != null && mounted) _chooseAirport(airport);
                 },
               ),
               ListTile(
@@ -101,8 +116,14 @@ class _TrackingLocationSheetState extends State<_TrackingLocationSheet> {
               ),
             ],
           ),
-        ),
+        )),
       );
+
+  void _chooseAirport(Airport airport) {
+    // Centre changes synchronously; close without waiting for the live feed.
+    widget.controller.chooseAirport(airport);
+    Navigator.pop(context);
+  }
 
   Future<void> _useCurrentLocation() async {
     setState(() => _locating = true);

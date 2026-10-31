@@ -6,7 +6,7 @@ Reviewed: 28 October 2026
 
 No commercial-flight identity provider is enabled in the Android application.
 The existing cached `NoOpFlightIdentityProvider` remains the production
-implementation, so an unresolved OpenSky callsign stays primary and AviJourney
+implementation, so an unresolved OpenSky callsign stays primary and CAF4U Aircraft Companion
 never manufactures a passenger-facing flight number.
 
 AirLabs is the strongest technical candidate for a future server-side adapter:
@@ -14,7 +14,7 @@ its live-flight record can contain the aircraft hex/registration, operational
 ICAO flight identifier and IATA commercial identifier together. That can form a
 verifiable mapping only when the returned aircraft identity matches the
 OpenSky aircraft and the observation is current. It is not integrated now
-because AviJourney has no credential-holding backend, an API key must not be
+because CAF4U Aircraft Companion has no credential-holding backend, an API key must not be
 shipped in an APK, and redistribution/caching rights need written confirmation
 for this product.
 
@@ -45,7 +45,7 @@ they can change and must be rechecked before procurement.
 | [FlightAware AeroAPI](https://www.flightaware.com/commercial/aeroapi/) | Strong global flight identity, canonical identifiers and alternate/codeshare handling. A callsign alone may still be ambiguous. | Personal has no minimum and up to US$5 monthly credit; Standard has a US$100/month minimum plus per-result-set fees; Premium starts at US$1,000/month. | Personal is personal/academic only. Standard permits B2C use. The [Personal License](https://www.flightaware.com/commercial/aeroapi/AeroAPI_Personal_License.pdf) restricts combining its data with another real-time provider without permission, so it is not suitable for the current OpenSky-based APK. |
 | [aviationstack](https://aviationstack.com/pricing) | Real-time flight data exposes commercial and operational identifiers, but the public material does not establish a safe arbitrary OpenSky-callsign/aircraft correlation contract. | Free: 100 requests/month, non-commercial. Basic: US$49.99/month for 10k requests and commercial use; higher plans from US$149.99/month. | Could support direct flight-number searches, but not selected for callsign enrichment without a trusted correlation key and server-side credential protection. |
 | [Cirium Flex APIs](https://developer.flightstats.com/getting-started/) | Established schedules and flight-status data; potentially suitable with contracted identity semantics. | Evaluation: 20,000 lifetime transactions with endpoint sub-limits. Commercial is usage-based; premium/contract pricing is not public. | Requires App ID/key and commercial terms. A sales/technical validation is needed before treating a callsign mapping as verified. |
-| [AeroDataBox](https://aerodatabox.com/pricing) | Flight-status/search coverage is useful, but the provider documents regional completeness limitations rather than universal coverage. | Direct plans start at US$19/month; marketplace plans from US$7.50/month. Derived-work licensing is advertised from US$499/month direct or US$187.50/month via API.Market. | Useful candidate where coverage exists, but caching, derived-work rights and aircraft-to-flight correlation must be validated for AviJourney's distribution model. |
+| [AeroDataBox](https://aerodatabox.com/pricing) | Flight-status/search coverage is useful, but the provider documents regional completeness limitations rather than universal coverage. | Direct plans start at US$19/month; marketplace plans from US$7.50/month. Derived-work licensing is advertised from US$499/month direct or US$187.50/month via API.Market. | Useful candidate where coverage exists, but caching, derived-work rights and aircraft-to-flight correlation must be validated for CAF4U Aircraft Companion's distribution model. |
 | [OpenSky Network](https://openskynetwork.github.io/opensky-api/rest.html) | Supplies surveillance callsign/state, not a verified passenger commercial flight number. | Existing free/open position source subject to OpenSky access limits and terms. | Remains the position source only. It cannot verify `BAW7LC -> BA783`. |
 
 ## Deployment prerequisites for enrichment

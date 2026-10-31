@@ -70,7 +70,10 @@ class BundledAirportSearchProvider implements AirportSearchProvider {
             airport.city,
             airport.country,
           ].whereType<String>().join(' ').toLowerCase();
-          return tokens.every(searchable.contains);
+          return tokens.every(searchable.contains) ||
+              searchable
+                  .replaceAll(RegExp(r'\s+'), '')
+                  .contains(query.toLowerCase().replaceAll(RegExp(r'\s+'), ''));
         })
         .take(100)
         .toList(growable: false);

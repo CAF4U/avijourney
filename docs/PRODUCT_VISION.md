@@ -1,46 +1,11 @@
-# AviJourney Product Vision
+# CAF4U Aircraft Companion Product Vision
 
-## One-line idea
+**Discover, identify and follow aircraft.**
 
-**AviJourney helps people see, understand and eventually manage the aviation journey around them and ahead of them.**
+CAF4U Aircraft Companion (formerly AviJourney) is an independent aircraft-tracking and aviation discovery application for curious observers, plane spotters and aviation enthusiasts.
 
-## Why the name fits
+Its core is nearby live aircraft, radar and geographic maps, aircraft identity and details, observed trails, useful filtering and saved aircraft, airlines, routes and airports. Unknown information remains unknown; operational callsigns are never converted into guessed passenger-facing flight numbers.
 
-- **AVI** — aviation.
-- **JOURNEY** — the aircraft's journey today and the traveller's journey tomorrow.
+Search has two distinct purposes: filtering acquired aircraft in the current tracking area, and choosing a different airport as the tracking centre. Results offer details and explicit actions. Airport reference discovery is global; live aircraft coverage depends on the acquired area and provider coverage.
 
-The initial application follows aircraft journeys through live airspace. The architecture should later support the user's own travel journey without requiring a rename or fundamental domain rewrite.
-
-## V0.3 product promise
-
-Open the app and immediately understand what is flying around you:
-
-- what aircraft it is;
-- its callsign;
-- where it is;
-- how high and fast it is;
-- where it came from and where it is going when that can be verified;
-- its recent observed trail;
-- aircraft registration/type/operator;
-- a trustworthy indication when information is unresolved.
-
-## Longer-term direction
-
-Potential future areas, deliberately outside the V0.3 MVP:
-
-- verified commercial flight-number identity;
-- airport and terminal intelligence;
-- the user's upcoming flights;
-- disruption/status intelligence;
-- fare comparison and fare watching;
-- baggage/cabin information;
-- trip itineraries;
-- destination information;
-- connection support;
-- integration into a wider CAF4U Travel Companion suite.
-
-## Core trust rule
-
-**Unknown is better than wrong.**
-
-When a commercial flight number, route, airport or aircraft identity cannot be verified, present the best verified information and leave unresolved fields unresolved.
+Trip planning, booking confirmations, travel documents and itinerary management belong to the separate CAF4U Travel Companion. Both products remain independently usable. Future integration requires a concrete requirement and agreed interface; no integration is implemented by this change.
