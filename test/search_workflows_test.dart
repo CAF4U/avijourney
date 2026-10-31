@@ -100,6 +100,8 @@ void main() {
     expect(viewport.viewport.latitude, app.trackingCenter.latitude);
     expect(viewport.viewport.longitude, app.trackingCenter.longitude);
     expect(app.displayFilter, isNull);
+    await tester.tap(find.text('Radar'));
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('rangeBadge')), findsOneWidget);
   });
 
