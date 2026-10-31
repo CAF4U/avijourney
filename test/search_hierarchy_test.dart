@@ -24,10 +24,13 @@ void main() {
     expect(row, findsOneWidget);
     expect(app.displayFilter, isNull);
     await tester.ensureVisible(row);
+    await tester.pumpAndSettle();
     await tester.tap(row);
     await tester.pumpAndSettle();
     final aircraft = find.byKey(const Key('drilldownAircraft-40621D'));
     expect(aircraft, findsOneWidget);
+    await tester.ensureVisible(aircraft);
+    await tester.pumpAndSettle();
     await tester.tap(aircraft);
     await tester.pumpAndSettle();
     expect(app.selectedIcao24, '40621D');

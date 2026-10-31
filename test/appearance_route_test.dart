@@ -113,6 +113,7 @@ void main() {
       expect(app.displayFilter, isNull);
       await tester
           .ensureVisible(find.byKey(const Key('searchResult-route-EGLL-EGTE')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('searchResult-route-EGLL-EGTE')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('drilldownAircraft-40621D')), findsOneWidget);

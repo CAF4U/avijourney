@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/app_controller.dart';
+import '../../app/search/universal_search_service.dart';
 import '../../domain/models/airline.dart';
 import '../../domain/models/aircraft_filter.dart';
 import '../../domain/models/aircraft_route.dart';
@@ -91,6 +92,12 @@ class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
 
   Widget _contents(BuildContext context) {
     if (_selection != null) return _drilldown(_selection!);
+    final types = UniversalSearchService.routeCodes(_submittedQuery) == null
+        ? SearchResultType.values
+        : [
+            SearchResultType.route,
+            ...SearchResultType.values.where((t) => t != SearchResultType.route)
+          ];
     final grouped = <SearchResultType, List<SearchResult>>{};
     for (final result
         in _results.where((r) => _category == null || r.type == _category)) {
