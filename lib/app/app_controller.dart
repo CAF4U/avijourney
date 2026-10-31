@@ -4,6 +4,10 @@ import 'package:flutter/foundation.dart';
 
 import '../core/errors/provider_exception.dart';
 import '../domain/models/airport.dart';
+import '../domain/models/aircraft_alert.dart';
+import '../domain/providers/airport_weather_provider.dart';
+import 'weather/airport_weather_controller.dart';
+import 'alerts/foreground_alert_engine.dart';
 import '../domain/models/airline.dart';
 import '../domain/models/aircraft_filter.dart';
 import '../domain/models/aircraft_route.dart';
@@ -25,6 +29,9 @@ enum FeedStatus { connecting, live, cached, offline, rateLimited, error }
 class AppController extends ChangeNotifier {
   AppController({
     required AircraftRepository repository,
+    AirportWeatherProvider weatherProvider = const UnavailableWeatherProvider(),
+    WeatherCacheStore? weatherCache,
+    DateTime Function()? clock,
     TrackingCenter trackingCenter = TrackingCenter.heathrow,
     AppPreferencesStore preferencesStore = const NoOpAppPreferencesStore(),
     DeviceLocationProvider? deviceLocationProvider,
@@ -32,13 +39,39 @@ class AppController extends ChangeNotifier {
     AirlineSearchProvider airlineSearchProvider = const StaticAirlineCatalog(),
     this.feedName = 'OpenSky',
     UniversalSearchService searchService = const UniversalSearchService(),
-  })  : _repository = repository,
+  })  : weather = AirportWeatherController(
+            provider: weatherProvider,
+            cache: weatherCache ?? MemoryWeatherCacheStore(),
+            clock: clock),
+        _clock = clock ?? DateTime.now,
+        _repository = repository,
         _trackingCenter = trackingCenter,
         _preferencesStore = preferencesStore,
         _deviceLocationProvider = deviceLocationProvider,
         _airportSearchProvider = airportSearchProvider,
         _airlineSearchProvider = airlineSearchProvider,
         _searchService = searchService;
+
+  final AirportWeatherController weather;
+  final DateTime Function() _clock;
+  final _alertEngine = ForegroundAlertEngine();
+  List<AircraftAlert> _alerts = [];
+  AircraftAlert? _foregroundNotice;
+  int alertRevision = 0;
+  List<AircraftAlert> get alerts => List.unmodifiable(_alerts);
+  AircraftAlert? get foregroundNotice => _foregroundNotice;
+  bool get isActive => _isActive;
+  void dismissForegroundNotice() {
+    _foregroundNotice = null;
+    notifyListeners();
+  }
+
+  void clearAlerts() {
+    _alerts = [];
+    _foregroundNotice = null;
+    notifyListeners();
+    unawaited(_persist());
+  }
 
   static const minimumRefreshInterval = Duration(seconds: 30);
   final AircraftRepository _repository;
@@ -127,6 +160,8 @@ class AppController extends ChangeNotifier {
       if (persisted != null) {
         _trackingCenter = persisted.trackingCenter;
         _settings = persisted.settings;
+        weather.setEnabled(_settings.airportWeather);
+        _alerts = persisted.alerts.take(50).toList();
         _saved
           ..clear()
           ..addAll(persisted.savedAircraft);
@@ -174,7 +209,22 @@ class AppController extends ChangeNotifier {
       if (!identical(requestedCenter, _trackingCenter)) return;
       _aircraft = _mergeObservedHistory(result);
       _feedStatus = FeedStatus.live;
+      if (_isActive && _settings.foregroundAlerts) {
+        final generated = _alertEngine.process(
+            aircraft: _aircraft,
+            center: _trackingCenter,
+            settings: _settings,
+            followed: _saved.map((s) => s.toUpperCase()).toSet(),
+            now: _clock());
+        if (generated.isNotEmpty) {
+          _alerts = [...generated.reversed, ..._alerts].take(50).toList();
+          _foregroundNotice = generated.last;
+          alertRevision++;
+          unawaited(_persist());
+        }
+      }
     } on ProviderException catch (error) {
+      _alertEngine.resetBaseline();
       _feedStatus = switch (error.type) {
         ProviderErrorType.networkUnavailable ||
         ProviderErrorType.timeout =>
@@ -183,6 +233,7 @@ class AppController extends ChangeNotifier {
         _ => _aircraft.isEmpty ? FeedStatus.error : FeedStatus.cached,
       };
     } catch (_) {
+      _alertEngine.resetBaseline();
       _feedStatus = _aircraft.isEmpty ? FeedStatus.error : FeedStatus.cached;
     }
     notifyListeners();
@@ -231,6 +282,8 @@ class AppController extends ChangeNotifier {
 
   Future<void> setTrackingCenter(TrackingCenter center) async {
     _trackingCenter = center;
+    _alertEngine.resetBaseline();
+    _foregroundNotice = null;
     _aircraft = const [];
     _isChoosingCenterOnMap = false;
     _locationMessage = null;
@@ -367,7 +420,17 @@ class AppController extends ChangeNotifier {
     final refreshIntervalChanged =
         settings.refreshInterval != _settings.refreshInterval;
     final radarRangeChanged = settings.radarRangeNm != _settings.radarRangeNm;
+    final alertContextChanged = radarRangeChanged ||
+        settings.foregroundAlerts != _settings.foregroundAlerts ||
+        settings.alertFollowedEntry != _settings.alertFollowedEntry ||
+        settings.alertSquawk7600 != _settings.alertSquawk7600 ||
+        settings.alertSquawk7700 != _settings.alertSquawk7700 ||
+        settings.alertFollowedMovement != _settings.alertFollowedMovement ||
+        settings.alertSquawkFollowedOnly != _settings.alertSquawkFollowedOnly;
     _settings = settings;
+    weather.setEnabled(settings.airportWeather);
+    if (alertContextChanged) _alertEngine.resetBaseline();
+    if (!settings.foregroundAlerts) _foregroundNotice = null;
     if (refreshIntervalChanged) _scheduleRefresh();
     notifyListeners();
     unawaited(_persist());
@@ -380,26 +443,41 @@ class AppController extends ChangeNotifier {
     await refresh();
   }
 
-  Future<void> _persist() => _preferencesStore.save(PersistedAppState(
+  Future<void> _persistTail = Future<void>.value();
+  Future<void> _persist() {
+    final snapshot = PersistedAppState(
         trackingCenter: _trackingCenter,
         settings: _settings,
-        savedAircraft: _saved,
-        followedItems: _followedItems,
-      ));
+        savedAircraft: Set.of(_saved),
+        followedItems: Set.of(_followedItems),
+        alerts: List.of(_alerts));
+    _persistTail = _persistTail.then((_) async {
+      try {
+        await _preferencesStore.save(snapshot);
+      } catch (_) {/* Local failure must not break tracking. */}
+    });
+    return _persistTail;
+  }
 
   void pause() {
     _isActive = false;
+    weather.setForeground(false);
+    _alertEngine.resetBaseline();
+    _foregroundNotice = null;
     _scheduleRefresh();
   }
 
   Future<void> resume() async {
     if (_isActive) return;
     _isActive = true;
+    weather.setForeground(true);
+    _alertEngine.resetBaseline();
     await refresh();
     _scheduleRefresh();
   }
 
   void toggleSaved(String icao24) {
+    _alertEngine.resetBaseline();
     final aircraft =
         _aircraft.where((item) => item.state.icao24 == icao24).firstOrNull;
     final item = FollowedItem(
@@ -421,6 +499,7 @@ class AppController extends ChangeNotifier {
   bool isFollowing(FollowedItem item) => _followedItems.contains(item);
 
   void toggleFollowed(FollowedItem item) {
+    if (item.type == FollowedItemType.aircraft) _alertEngine.resetBaseline();
     if (!_followedItems.add(item)) _followedItems.remove(item);
     if (item.type == FollowedItemType.aircraft) {
       if (_followedItems.contains(item)) {
@@ -436,6 +515,7 @@ class AppController extends ChangeNotifier {
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    weather.dispose();
     super.dispose();
   }
 }

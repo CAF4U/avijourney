@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/app_controller.dart';
+import '../../app/alerts/foreground_alert_engine.dart';
 import '../../app/navigation/detail_navigation.dart';
 import '../discovery/detail_widgets.dart';
 import '../discovery/entity_detail_pages.dart';
@@ -97,6 +98,11 @@ class _AircraftDetail extends StatelessWidget {
         'Heading': '${state.trackDegrees.round()}°',
         'Vertical rate': '${state.verticalRateFeetPerMinute.round()} ft/min',
         'Squawk': state.squawk ?? 'Unavailable',
+        'Movement': estimatedMovement(state),
+        'Position timestamp':
+            state.positionTime?.toLocal().toString() ?? 'Unavailable',
+        'ACARS / OOOI':
+            'Not connected; OUT/IN cannot be established from speed or altitude',
         'Position':
             '${state.latitude.toStringAsFixed(4)}, ${state.longitude.toStringAsFixed(4)}'
       }),

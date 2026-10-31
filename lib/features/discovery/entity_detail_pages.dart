@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../app/app_controller.dart';
+import '../../app/alerts/foreground_alert_engine.dart';
 import '../../app/discovery/airport_traffic.dart';
 import '../../app/navigation/detail_navigation.dart';
 import '../../domain/models/airport.dart';
@@ -9,6 +10,7 @@ import '../../domain/models/aircraft_route.dart';
 import '../../domain/models/followed_item.dart';
 import '../../domain/models/tracked_aircraft.dart';
 import '../aircraft_detail/aircraft_detail_sheet.dart';
+import '../weather/airport_weather_page.dart';
 import 'detail_widgets.dart';
 
 void openAirportDetails(
@@ -135,6 +137,11 @@ class AirportDetailPage extends StatelessWidget {
                   Icons.search,
                   'Find departing flight',
                   () => _show(context, AirportTraffic.departures, find: true)),
+              _action(
+                  'airportWeather',
+                  Icons.cloud_outlined,
+                  'Airport weather · METAR / TAF',
+                  () => openAirportWeather(context, airport, controller)),
               const Padding(
                   padding: EdgeInsets.symmetric(vertical: 12),
                   child: Text(
@@ -346,6 +353,7 @@ class AircraftProfilePage extends StatelessWidget {
           DetailSection(title: 'OBSERVED OPERATION', rows: {
             'Identifier': aircraft.primaryIdentifier,
             'Callsign': aircraft.state.callsign,
+            'Movement': estimatedMovement(aircraft.state),
             'Altitude': '${aircraft.state.altitudeFeet.round()} ft',
             'Ground speed': '${aircraft.state.groundSpeedKnots.round()} kt',
             'Observed': aircraft.state.observedAt.toLocal().toString()

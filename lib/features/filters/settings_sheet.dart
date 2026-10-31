@@ -132,6 +132,67 @@ class _SettingsSheet extends StatelessWidget {
                         minimumAltitudeFeet: value.start,
                         maximumAltitudeFeet: value.end))),
             const Divider(),
+            Text('Optional capabilities',
+                style: Theme.of(context).textTheme.titleMedium),
+            SwitchListTile(
+                key: const Key('foregroundAlertsSetting'),
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Foreground alerts'),
+                subtitle: const Text(
+                    'In-app banners and local history while active; no background monitoring'),
+                value: settings.foregroundAlerts,
+                onChanged: (v) => controller
+                    .updateSettings(settings.copyWith(foregroundAlerts: v))),
+            if (settings.foregroundAlerts) ...[
+              SwitchListTile(
+                  title: const Text('Followed aircraft detected in scan area'),
+                  value: settings.alertFollowedEntry,
+                  onChanged: (v) => controller.updateSettings(
+                      settings.copyWith(alertFollowedEntry: v))),
+              SwitchListTile(
+                  title: const Text('Squawk 7600 reports'),
+                  value: settings.alertSquawk7600,
+                  onChanged: (v) => controller
+                      .updateSettings(settings.copyWith(alertSquawk7600: v))),
+              SwitchListTile(
+                  title: const Text('Squawk 7700 reports'),
+                  value: settings.alertSquawk7700,
+                  onChanged: (v) => controller
+                      .updateSettings(settings.copyWith(alertSquawk7700: v))),
+              SwitchListTile(
+                  title: const Text('Squawk alerts: followed aircraft only'),
+                  value: settings.alertSquawkFollowedOnly,
+                  onChanged: (v) => controller.updateSettings(
+                      settings.copyWith(alertSquawkFollowedOnly: v))),
+              SwitchListTile(
+                  title: const Text('Followed takeoff / landing estimates'),
+                  subtitle: const Text(
+                      'Two fresh ground-state observations; not ACARS OFF/ON confirmation'),
+                  value: settings.alertFollowedMovement,
+                  onChanged: (v) => controller.updateSettings(
+                      settings.copyWith(alertFollowedMovement: v))),
+              SwitchListTile(
+                  title: const Text('System feedback sound'),
+                  subtitle: const Text('Subject to device sound settings'),
+                  value: settings.alertSound,
+                  onChanged: (v) => controller
+                      .updateSettings(settings.copyWith(alertSound: v))),
+              SwitchListTile(
+                  title: const Text('Haptic feedback'),
+                  value: settings.alertVibration,
+                  onChanged: (v) => controller
+                      .updateSettings(settings.copyWith(alertVibration: v))),
+            ],
+            SwitchListTile(
+                key: const Key('airportWeatherSetting'),
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Airport METAR / TAF weather'),
+                subtitle: const Text(
+                    'Independent of alerts; fetched on airport weather pages with caching'),
+                value: settings.airportWeather,
+                onChanged: (v) => controller
+                    .updateSettings(settings.copyWith(airportWeather: v))),
+            const Divider(),
             ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.sensors),

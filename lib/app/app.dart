@@ -20,6 +20,8 @@ import '../data/repositories/live_aircraft_repository.dart';
 import '../data/repositories/mock_aircraft_repository.dart';
 import '../features/home/home_shell.dart';
 import 'app_controller.dart';
+import '../data/weather/awc_weather_provider.dart';
+import '../data/weather/shared_preferences_weather_cache.dart';
 import 'navigation/detail_navigation.dart';
 import 'mapping/map_viewport_controller.dart';
 
@@ -83,6 +85,8 @@ class _AviJourneyAppState extends State<AviJourneyApp>
           const NoOpFlightIdentityProvider(),
         ),
       ),
+      weatherProvider: AwcWeatherProvider(client: client),
+      weatherCache: SharedPreferencesWeatherCache(),
       preferencesStore: const SharedPreferencesAppStore(),
       deviceLocationProvider: const GeolocatorDeviceLocationProvider(),
       airportSearchProvider: BundledAirportSearchProvider(),

@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../alerts/alerts_page.dart';
 
 import '../../app/app_controller.dart';
 import '../../app/navigation/detail_navigation.dart';
@@ -39,17 +41,31 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
+  int _seenAlertRevision = 0;
 
   @override
   void initState() {
     super.initState();
     widget.detailNavigation.addListener(_openLinkedMap);
+    _seenAlertRevision = widget.controller.alertRevision;
+    widget.controller.addListener(_alertFeedback);
   }
 
   @override
   void dispose() {
     widget.detailNavigation.removeListener(_openLinkedMap);
+    widget.controller.removeListener(_alertFeedback);
     super.dispose();
+  }
+
+  void _alertFeedback() {
+    if (_seenAlertRevision == widget.controller.alertRevision) return;
+    _seenAlertRevision = widget.controller.alertRevision;
+    if (!widget.controller.isActive ||
+        !widget.controller.settings.foregroundAlerts) return;
+    if (widget.controller.settings.alertSound)
+      SystemSound.play(SystemSoundType.click);
+    if (widget.controller.settings.alertVibration) HapticFeedback.lightImpact();
   }
 
   void _openLinkedMap() {
@@ -106,10 +122,15 @@ class _HomeShellState extends State<HomeShell> {
                       maxLines: 2,
                       style:
                           TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                  Text('V0.3.7 · DEVELOPMENT',
+                  Text('V0.4.0 · DEVELOPMENT',
                       style: TextStyle(fontSize: 10, letterSpacing: 1.2)),
                 ]),
             actions: [
+              IconButton(
+                  tooltip: 'Foreground alerts',
+                  onPressed: () =>
+                      openForegroundAlerts(context, widget.controller),
+                  icon: const Icon(Icons.notifications_outlined)),
               IconButton(
                 tooltip: 'Search aircraft, airlines and airports',
                 onPressed: () => showUniversalSearch(
@@ -162,23 +183,27 @@ class _HomeShellState extends State<HomeShell> {
                   )),
                 ),
           body: SafeArea(
-            child: wide
-                ? Row(children: [
-                    NavigationRail(
-                        selectedIndex: _index,
-                        onDestinationSelected: (value) =>
-                            setState(() => _index = value),
-                        labelType: NavigationRailLabelType.all,
-                        destinations: _destinations
-                            .map((item) => NavigationRailDestination(
-                                icon: item.icon,
-                                selectedIcon: item.selectedIcon,
-                                label: Text(item.label)))
-                            .toList()),
-                    const VerticalDivider(width: 1),
-                    Expanded(child: content),
-                  ])
-                : content,
+            child: Column(children: [
+              ForegroundAlertBanner(controller: widget.controller),
+              Expanded(
+                  child: wide
+                      ? Row(children: [
+                          NavigationRail(
+                              selectedIndex: _index,
+                              onDestinationSelected: (value) =>
+                                  setState(() => _index = value),
+                              labelType: NavigationRailLabelType.all,
+                              destinations: _destinations
+                                  .map((item) => NavigationRailDestination(
+                                      icon: item.icon,
+                                      selectedIcon: item.selectedIcon,
+                                      label: Text(item.label)))
+                                  .toList()),
+                          const VerticalDivider(width: 1),
+                          Expanded(child: content),
+                        ])
+                      : content),
+            ]),
           ),
           bottomNavigationBar: wide
               ? null

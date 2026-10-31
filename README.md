@@ -92,3 +92,6 @@ V0.3.4 makes scan-centre changes recenter the map automatically. Airport and ind
 
 
 V0.3.7 adds linked aircraft, operator and airport detail pages from card headings and values. Route headings open the geographic connection map. Airport pages include general information, map/scan actions, follow controls, searchable observed arrivals/departures and nearby reported ground aircraft. No schedule provider was added; airport-wide scheduled times, gates, full fleets and unverified identity information remain unavailable.
+
+
+V0.4.0 adds independent opt-in foreground alerts and airport METAR/TAF weather. Alerts use fresh positions for followed detections, reported 7600/7700 and explicitly inferred followed takeoff/landing events. The bell opens the latest 50 local alerts. Airport details link to cached AWC observations/forecasts with original reports and timestamps. Neither capability performs background monitoring; ACARS/OOOI is not connected. See docs/FOREGROUND_ALERTS_WEATHER_AND_ACARS.md.
