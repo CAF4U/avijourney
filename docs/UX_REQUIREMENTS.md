@@ -61,3 +61,7 @@ Connecting, Live, Cached, Offline, Rate limited, Feed error. Cached data should 
 ## Accessibility/readability
 
 Do not rely solely on colour for climb/descent/selection. Use comfortable touch targets, respect text scaling where possible and prevent label clutter from obscuring controls.
+
+### Search hierarchy
+
+Search displays a selectable list first, even for a single result. Category chips narrow the list without applying a display filter. Selecting an airline, route or airport opens its aircraft/detail list, with a back control that preserves the original query and results. Individual aircraft open their detail view. Tracking, showing a route on the map and applying a display filter are explicit actions after selection. Route/airline aircraft lists use acquired data only and explain empty results.

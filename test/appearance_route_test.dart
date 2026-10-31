@@ -109,6 +109,13 @@ void main() {
           find.byKey(const Key('universalSearchField')), 'LHR-EXT');
       await tester.testTextInput.receiveAction(TextInputAction.search);
       await tester.pumpAndSettle();
+      expect(find.byKey(const Key('routeAircraftList')), findsNothing);
+      expect(app.displayFilter, isNull);
+      await tester
+          .ensureVisible(find.byKey(const Key('searchResult-route-EGLL-EGTE')));
+      await tester.tap(find.byKey(const Key('searchResult-route-EGLL-EGTE')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('drilldownAircraft-40621D')), findsOneWidget);
       expect(find.byKey(const Key('routeAircraftList')), findsOneWidget);
       expect(find.byKey(const Key('routeAircraftMap')), findsOneWidget);
       await tester.tap(

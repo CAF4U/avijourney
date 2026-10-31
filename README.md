@@ -78,3 +78,7 @@ The product name is CAF4U Aircraft Companion (formerly AviJourney). The reposito
 Settings → Appearance offers Dark and Light; the choice persists across restarts. Radar, map tiles, labels and the app surfaces follow that choice. Existing installations default to Dark.
 
 Enter airport pairs such as `LHR-LAX`, `LHR -> LAX` or `LHR → LAX`. The app resolves known airport codes even without a matching nearby aircraft, then offers **List aircraft on this route** or **Show route and aircraft on map**. Direction matters. The map fits and labels both airports and displays matching acquired aircraft, with a reference connection line (not a verified flight path). Airport pairs do not confirm a scheduled service. Aircraft are still limited to the current tracking area and known provider route data; zero matches is stated explicitly. Clearing the filter removes the connection overlay.
+
+## Search navigation (0.3.2)
+
+Search always shows a result list, including a single matching route. Category chips select flights, aircraft, airlines, routes or airports. Selecting a route/airline/airport opens its detail list inside search; matching aircraft can then be selected for individual details. Back returns to the original results and query. Search alone never changes the display filter. Map, track and filter actions are explicit. The airport/route reference and acquired-area limitations still apply.
