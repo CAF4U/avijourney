@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_controller.dart';
 import '../../domain/models/airport.dart';
+import '../../domain/models/aircraft_route.dart';
 import '../../app/mapping/map_tile_source.dart';
 import '../../app/mapping/map_viewport_controller.dart';
 import '../cards/aircraft_cards_view.dart';
@@ -76,7 +77,7 @@ class _HomeShellState extends State<HomeShell> {
                       maxLines: 2,
                       style:
                           TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                  Text('V0.3.0 · DEVELOPMENT',
+                  Text('V0.3.1 · DEVELOPMENT',
                       style: TextStyle(fontSize: 10, letterSpacing: 1.2)),
                 ]),
             actions: [
@@ -87,6 +88,7 @@ class _HomeShellState extends State<HomeShell> {
                   widget.controller,
                   onShowOnMap: _showSelectedAircraftOnMap,
                   onTrackAirport: _trackAirport,
+                  onShowRoute: _showRoute,
                 ),
                 icon: const Icon(Icons.search),
               ),
@@ -159,6 +161,18 @@ class _HomeShellState extends State<HomeShell> {
         );
       },
     );
+  }
+
+  void _showRoute(AircraftRoute route, bool onMap) {
+    widget.controller.showRoute(route, onMap: onMap);
+    setState(() => _index = onMap ? 1 : 2);
+    if (onMap && route.hasCoordinates) {
+      widget.mapViewportController.update(MapViewport(
+          latitude: route.origin.latitude!,
+          longitude: route.origin.longitude!,
+          zoom: 3,
+          route: route));
+    }
   }
 
   void _showSelectedAircraftOnMap() {
