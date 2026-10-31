@@ -10,7 +10,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('CAF4U Aircraft Companion'), findsOneWidget);
     expect(find.text('20 NM'), findsOneWidget);
-    expect(find.textContaining('CENTER · LONDON HEATHROW'), findsOneWidget);
+    expect(find.textContaining('CENTRE · London Heathrow'), findsOneWidget);
     await tester.tap(find.byKey(const Key('rangeBadge')));
     await tester.pumpAndSettle();
     expect(find.text('80 NM'), findsOneWidget);

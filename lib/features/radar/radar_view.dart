@@ -116,17 +116,44 @@ class RadarView extends StatelessWidget {
                                   fontWeight: FontWeight.bold))))),
               Positioned(
                   left: 16,
+                  right: 16,
                   bottom: 14,
-                  child: InkWell(
+                  child: Material(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(8),
+                    child: InkWell(
                       key: const Key('radarCenterControl'),
                       onTap: onOpenTrackingLocation,
                       borderRadius: BorderRadius.circular(8),
                       child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Text(
-                              'CENTER · ${controller.trackingCenter.label.toUpperCase()}\n${controller.feedName.toUpperCase()} POSITION FEED',
-                              style: const TextStyle(
-                                  fontSize: 10, letterSpacing: 1.1))))),
+                        padding: const EdgeInsets.all(12),
+                        child: Row(children: [
+                          const Icon(Icons.edit_location_alt_outlined,
+                              size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                              child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                Text(
+                                    'CENTRE · ${controller.trackingCenter.label}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold)),
+                                Text(
+                                    'Tap to change · ${controller.feedName} position feed',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 10)),
+                              ])),
+                          const Icon(Icons.chevron_right, size: 20),
+                        ]),
+                      ),
+                    ),
+                  )),
             ]));
       });
 

@@ -42,6 +42,7 @@ class _AircraftMapViewState extends State<AircraftMapView>
   late final MapController _mapController =
       widget.mapController ?? MapController();
   late double _zoom = widget.viewportController.viewport.zoom;
+  bool _mapReady = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -62,6 +63,7 @@ class _AircraftMapViewState extends State<AircraftMapView>
   }
 
   void _moveToExternalViewport() {
+    if (!_mapReady) return;
     final viewport = widget.viewportController.viewport;
     if (viewport.route case final route? when route.hasCoordinates) {
       _mapController.fitCamera(_routeFit(route));
@@ -112,6 +114,10 @@ class _AircraftMapViewState extends State<AircraftMapView>
             key: const Key('aircraftGeographicMap'),
             mapController: _mapController,
             options: MapOptions(
+              onMapReady: () {
+                _mapReady = true;
+                _moveToExternalViewport();
+              },
               initialCenter: LatLng(viewport.latitude, viewport.longitude),
               initialZoom: viewport.zoom,
               minZoom: 1,

@@ -62,7 +62,10 @@ class _SettingsSheet extends StatelessWidget {
                 subtitle: Text(controller.trackingCenter.label),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => showTrackingLocationSheet(context, controller,
-                    onChooseOnMap: onChooseOnMap)),
+                        onChooseOnMap: () {
+                      Navigator.pop(context);
+                      onChooseOnMap();
+                    })),
             const Divider(),
             Text('Radar range · ${controller.settings.radarRangeNm} NM'),
             SegmentedButton<int>(

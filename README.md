@@ -86,3 +86,6 @@ Search always shows a result list, including a single matching route. Category c
 ## Independent screen appearance (0.3.3)
 
 Radar and Map each have their own on-screen Dark/Light selector. A black-and-green radar can be combined with a light map, independently of the app shell. Both overrides persist across restart. Existing preferences retain their previous global appearance until a screen override is selected; unrelated settings updates preserve both overrides. Reset settings removes the overrides.
+
+
+V0.3.4 makes scan-centre changes recenter the map automatically. Airport and individual aircraft/flight search rows open Map at the selected location; their information buttons retain details and airport filters. Tap the radar location footer for saved airports or airport search. Live aircraft discovery remains limited to acquired positions.

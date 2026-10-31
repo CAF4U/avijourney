@@ -77,7 +77,7 @@ class _HomeShellState extends State<HomeShell> {
                       maxLines: 2,
                       style:
                           TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                  Text('V0.3.3 · DEVELOPMENT',
+                  Text('V0.3.4 · DEVELOPMENT',
                       style: TextStyle(fontSize: 10, letterSpacing: 1.2)),
                 ]),
             actions: [
@@ -180,6 +180,7 @@ class _HomeShellState extends State<HomeShell> {
         .where((item) => item.state.icao24 == widget.controller.selectedIcao24)
         .firstOrNull;
     if (selected != null) {
+      widget.controller.setDisplayFilter(null);
       widget.mapViewportController.update(MapViewport(
           latitude: selected.state.latitude,
           longitude: selected.state.longitude,
@@ -192,9 +193,7 @@ class _HomeShellState extends State<HomeShell> {
     widget.controller.setDisplayFilter(null);
     // chooseAirport updates the tracking centre synchronously before acquisition.
     unawaited(widget.controller.chooseAirport(airport));
-    widget.mapViewportController
-        .update(MapViewport.around(widget.controller.trackingCenter));
-    if (_index > 1) setState(() => _index = 0);
+    setState(() => _index = 1);
   }
 
   void _showMapForCenterSelection() => setState(() => _index = 1);

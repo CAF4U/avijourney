@@ -2,7 +2,7 @@ name: avijourney
 description: CAF4U Aircraft Companion - live aviation around you, a CAF4U Companion.
 publish_to: "none"
 
-version: 0.3.3+4
+version: 0.3.4+5
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

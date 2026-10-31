@@ -64,4 +64,9 @@ Do not rely solely on colour for climb/descent/selection. Use comfortable touch 
 
 ### Search hierarchy
 
-Search displays a selectable list first, even for a single result. Category chips narrow the list without applying a display filter. Selecting an airline, route or airport opens its aircraft/detail list, with a back control that preserves the original query and results. Individual aircraft open their detail view. Tracking, showing a route on the map and applying a display filter are explicit actions after selection. Route/airline aircraft lists use acquired data only and explain empty results.
+Search displays a selectable list first, even for a single result. Category chips narrow the list without applying a display filter. Selecting an airline or route opens its aircraft list, with a back control that preserves the original query and results. Selecting an airport opens Map at that airport and sets its scan centre. Selecting an individual flight or aircraft opens Map at its observed position, with that target selected. An explicit information button retains airport filters and aircraft/flight details. Showing a route on the map and applying a display filter remain explicit actions after selection. Route/airline aircraft lists use acquired data only and explain empty results.
+
+
+### Location navigation
+
+Changing the scan centre through settings, airport selection, device location or a map point automatically recentres the map, including when Map is inactive. Ordinary feed refreshes do not interrupt manual panning. The radar location footer is a visible tap target offering saved airports and airport search. Location navigation does not wait for live-provider acquisition to finish.

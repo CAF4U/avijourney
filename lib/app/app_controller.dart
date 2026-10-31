@@ -268,6 +268,25 @@ class AppController extends ChangeNotifier {
     return result.status;
   }
 
+  List<Airport> get savedAirports {
+    final airports = <Airport>[];
+    for (final item
+        in _followedItems.where((i) => i.type == FollowedItemType.airport)) {
+      final code = item.identifier.toUpperCase();
+      final airport = searchAirports(code)
+          .where((a) =>
+              a.icao.toUpperCase() == code || a.iata?.toUpperCase() == code)
+          .firstOrNull;
+      if (airport != null &&
+          airport.latitude != null &&
+          airport.longitude != null) {
+        airports.add(airport);
+      }
+    }
+    airports.sort((a, b) => a.name.compareTo(b.name));
+    return airports;
+  }
+
   List<Airport> searchAirports(String query) =>
       _airportSearchProvider?.search(query) ?? const [];
 

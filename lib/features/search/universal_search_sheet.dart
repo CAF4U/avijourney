@@ -212,31 +212,56 @@ class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
                     ? Icons.bookmark
                     : Icons.bookmark_border),
           ),
-          const Icon(Icons.chevron_right),
+          if (result.value is Airport || result.value is TrackedAircraft)
+            IconButton(
+                key: Key(
+                    'searchDetails-${result.type.name}-${result.identifier}'),
+                tooltip: result.value is Airport
+                    ? 'Airport details and filters'
+                    : 'Aircraft or flight details',
+                onPressed: () => _openResultDetails(result),
+                icon: const Icon(Icons.info_outline))
+          else
+            const Icon(Icons.chevron_right),
         ]),
         onTap: () {
-          final tracked = result.value;
-          if (tracked is TrackedAircraft &&
+          final value = result.value;
+          if (value is TrackedAircraft &&
               result.type != SearchResultType.route) {
-            if (result.type == SearchResultType.flight) {
-              showFlightDetail(context, tracked, widget.controller,
-                  onShowOnMap: () {
-                Navigator.pop(context);
-                widget.onShowOnMap();
-              });
-            } else {
-              widget.controller.select(tracked.state.icao24);
-              showAircraftDetail(context, tracked, widget.controller);
-            }
+            widget.controller.select(value.state.icao24);
+            Navigator.pop(context);
+            widget.onShowOnMap();
+          } else if (value is Airport &&
+              value.latitude != null &&
+              value.longitude != null) {
+            Navigator.pop(context);
+            widget.onTrackAirport(value);
           } else {
-            setState(() {
-              _selection = result;
-              _airportDirection = AirportDirection.either;
-            });
+            _openResultDetails(result);
           }
         },
       ),
     );
+  }
+
+  void _openResultDetails(SearchResult result) {
+    final value = result.value;
+    if (value is TrackedAircraft) {
+      widget.controller.select(value.state.icao24);
+      if (result.type == SearchResultType.flight) {
+        showFlightDetail(context, value, widget.controller, onShowOnMap: () {
+          Navigator.pop(context);
+          widget.onShowOnMap();
+        });
+      } else {
+        showAircraftDetail(context, value, widget.controller);
+      }
+    } else {
+      setState(() {
+        _selection = result;
+        _airportDirection = AirportDirection.either;
+      });
+    }
   }
 
   void _applyFilter(AircraftFilter filter) {

@@ -70,7 +70,7 @@ void main() {
     expect(app.visibleAircraft, contains(sample));
   });
 
-  testWidgets('airport result opens details and recentres radar and map',
+  testWidgets('airport result opens map and recentres radar and map',
       (tester) async {
     final app = controller();
     final viewport =
@@ -94,9 +94,8 @@ void main() {
         .firstWhere((r) => r.type == SearchResultType.airport);
     await tester.tap(find.text(airport.title));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('trackSelectedAirport')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('trackSelectedAirport')));
-    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('universalSearchField')), findsNothing);
+    expect(find.byKey(const Key('aircraftGeographicMap')), findsOneWidget);
     expect(app.trackingCenter.label, contains('LGA'));
     expect(viewport.viewport.latitude, app.trackingCenter.latitude);
     expect(viewport.viewport.longitude, app.trackingCenter.longitude);
