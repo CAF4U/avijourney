@@ -10,7 +10,7 @@ import '../../domain/models/tracked_aircraft.dart';
 import '../../domain/models/tracking_center.dart';
 import '../aircraft_detail/aircraft_detail_sheet.dart';
 
-class RadarView extends StatelessWidget {
+class RadarView extends StatefulWidget {
   const RadarView({
     required this.controller,
     required this.onOpenTrackingLocation,
@@ -18,6 +18,45 @@ class RadarView extends StatelessWidget {
   });
   final AppController controller;
   final VoidCallback onOpenTrackingLocation;
+
+  @override
+  State<RadarView> createState() => _RadarViewState();
+}
+
+class _RadarViewState extends State<RadarView> {
+  AppController get controller => widget.controller;
+  double _zoom = 1;
+  double _gestureStartZoom = 1;
+  late int _scanRange;
+  late TrackingCenter _scanCenter;
+  double get _maxZoom => controller.settings.radarRangeNm / .25;
+  double get _viewRange => controller.settings.radarRangeNm / _zoom;
+
+  @override
+  void initState() {
+    super.initState();
+    _scanRange = controller.settings.radarRangeNm;
+    _scanCenter = controller.trackingCenter;
+  }
+
+  @override
+  void didUpdateWidget(covariant RadarView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final center = controller.trackingCenter;
+    if (_scanRange != controller.settings.radarRangeNm ||
+        _scanCenter.latitude != center.latitude ||
+        _scanCenter.longitude != center.longitude) {
+      _zoom = 1;
+      _scanRange = controller.settings.radarRangeNm;
+      _scanCenter = center;
+    }
+  }
+
+  void _setZoom(double value) =>
+      setState(() => _zoom = value.clamp(1.0, _maxZoom).toDouble());
+
+  String get _viewRangeLabel =>
+      _viewRange.toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), '');
 
   @override
   Widget build(BuildContext context) => Theme(
@@ -42,7 +81,7 @@ class RadarView extends StatelessWidget {
                     painter: RadarPainter(
                       aircraft: controller.visibleAircraft,
                       selectedIcao24: controller.selectedIcao24,
-                      rangeNm: controller.settings.radarRangeNm,
+                      rangeNm: _viewRange,
                       showLabels: controller.settings.showLabels,
                       showTrails: controller.settings.showTrails,
                       trackingCenter: controller.trackingCenter,
@@ -50,6 +89,9 @@ class RadarView extends StatelessWidget {
                     ),
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
+                      onScaleStart: (_) => _gestureStartZoom = _zoom,
+                      onScaleUpdate: (details) =>
+                          _setZoom(_gestureStartZoom * details.scale),
                       onTapUp: (details) {
                         final aircraft = _nearestAircraft(
                           details.localPosition,
@@ -115,6 +157,48 @@ class RadarView extends StatelessWidget {
                               style: const TextStyle(
                                   fontWeight: FontWeight.bold))))),
               Positioned(
+                right: 12,
+                bottom: 100,
+                child: Material(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    IconButton(
+                      key: const Key('radarZoomIn'),
+                      tooltip: 'Zoom radar in',
+                      onPressed:
+                          _zoom < _maxZoom ? () => _setZoom(_zoom * 2) : null,
+                      icon: const Icon(Icons.add),
+                    ),
+                    IconButton(
+                      key: const Key('radarZoomOut'),
+                      tooltip: 'Zoom radar out',
+                      onPressed: _zoom > 1 ? () => _setZoom(_zoom / 2) : null,
+                      icon: const Icon(Icons.remove),
+                    ),
+                    IconButton(
+                      key: const Key('radarZoomReset'),
+                      tooltip: 'Show full radar scan area',
+                      onPressed: () => _setZoom(1),
+                      icon: const Icon(Icons.center_focus_strong),
+                    ),
+                  ]),
+                ),
+              ),
+              Positioned(
+                left: 16,
+                bottom: 100,
+                child: IgnorePointer(
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    color: Theme.of(context).colorScheme.surface,
+                    child: Text('VIEW · $_viewRangeLabel NM radius',
+                        key: const Key('radarViewRange'),
+                        style: const TextStyle(fontSize: 11)),
+                  ),
+                ),
+              ),
+              Positioned(
                   left: 16,
                   right: 16,
                   bottom: 14,
@@ -123,7 +207,7 @@ class RadarView extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                     child: InkWell(
                       key: const Key('radarCenterControl'),
-                      onTap: onOpenTrackingLocation,
+                      onTap: widget.onOpenTrackingLocation,
                       borderRadius: BorderRadius.circular(8),
                       child: Padding(
                         padding: const EdgeInsets.all(12),
@@ -158,14 +242,16 @@ class RadarView extends StatelessWidget {
       });
 
   TrackedAircraft? _nearestAircraft(Offset tap, Size size) {
-    final radius = size.shortestSide / 2;
+    final radius = size.shortestSide / 2 - 8;
+    if ((tap - size.center(Offset.zero)).distance > radius) return null;
     TrackedAircraft? nearest;
     var distance = 28.0;
     for (final aircraft in controller.visibleAircraft) {
-      final point = RadarPainter.positionFor(aircraft,
-          controller.trackingCenter, size, controller.settings.radarRangeNm);
+      final point = RadarPainter.positionFor(
+          aircraft, controller.trackingCenter, size, _viewRange);
       final candidate = (tap - point).distance;
-      if (candidate < distance && candidate <= radius) {
+      if (candidate < distance &&
+          (point - size.center(Offset.zero)).distance <= radius) {
         distance = candidate;
         nearest = aircraft;
       }
@@ -185,26 +271,26 @@ class RadarPainter extends CustomPainter {
       this.brightness = Brightness.dark});
   final List<TrackedAircraft> aircraft;
   final String? selectedIcao24;
-  final int rangeNm;
+  final double rangeNm;
   final bool showLabels;
   final bool showTrails;
   final TrackingCenter trackingCenter;
   final Brightness brightness;
 
   static Offset positionFor(TrackedAircraft aircraft,
-          TrackingCenter trackingCenter, Size size, int rangeNm) =>
+          TrackingCenter trackingCenter, Size size, num rangeNm) =>
       positionForCoordinates(aircraft.state.latitude, aircraft.state.longitude,
           trackingCenter, size, rangeNm);
 
   static Offset positionForCoordinates(double latitude, double longitude,
-      TrackingCenter trackingCenter, Size size, int rangeNm) {
+      TrackingCenter trackingCenter, Size size, num rangeNm) {
     const nmPerLatitudeDegree = 60.0;
     final longitudeNm = (longitude - trackingCenter.longitude) *
         60 *
         math.cos(trackingCenter.latitude * math.pi / 180);
     final latitudeNm =
         (latitude - trackingCenter.latitude) * nmPerLatitudeDegree;
-    final scale = size.shortestSide / 2 / rangeNm;
+    final scale = (size.shortestSide / 2 - 8) / rangeNm;
     return Offset(size.width / 2 + longitudeNm * scale,
         size.height / 2 - latitudeNm * scale);
   }
@@ -234,6 +320,9 @@ class RadarPainter extends CustomPainter {
     canvas.drawLine(Offset(center.dx - radius, center.dy),
         Offset(center.dx + radius, center.dy), grid);
     canvas.drawCircle(center, 3, Paint()..color = targetColor);
+    canvas.save();
+    canvas.clipPath(
+        Path()..addOval(Rect.fromCircle(center: center, radius: radius)));
     for (final target in aircraft) {
       final point = positionFor(target, trackingCenter, size, rangeNm);
       if ((point - center).distance > radius) continue;
@@ -292,6 +381,7 @@ class RadarPainter extends CustomPainter {
           ..paint(canvas, point + const Offset(9, -15));
       }
     }
+    canvas.restore();
   }
 
   @override

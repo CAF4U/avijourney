@@ -75,3 +75,8 @@ Changing the scan centre through settings, airport selection, device location or
 ### Linked information cards (V0.3.7)
 
 Aircraft section headings, model/type and registration open the physical aircraft profile. Operator values open airline/operator profiles, with catalogue codes and country only for an exact name match. Airport values open dedicated airport pages with reference information, map/scan navigation, followed state, observed arrivals/departures, ground aircraft within 3 NM and local flight search. These are acquired-data lists, not complete scheduled airport boards; missing schedules, gates and statuses stay unavailable. Route headings navigate to the existing geographic map and fit the airport connection, which remains distinguished from an actual flight track. Back returns to the originating detail card.
+
+
+### Radar zoom (V0.4.1)
+
+Pinch apart/together or use +/− to zoom around the scan centre, down to a 0.25 NM displayed radius. Aircraft markers, label fonts and tap tolerance stay the same screen size while geographical spacing increases. The VIEW scale shows the displayed radius; the existing range badge controls acquisition coverage. Zoom is presentation only: it never changes scan range, alert area or provider cadence. Reset restores the full scan area. Feed refreshes and tab changes preserve zoom; a new scan centre or range restores the full area. Radar targets/trails are clipped to the scope and tap selection uses the zoomed positions.
