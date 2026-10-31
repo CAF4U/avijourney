@@ -37,7 +37,11 @@ class BundledAirlineSearchProvider implements AirlineSearchProvider {
     final iata = fields[1].isEmpty ? null : fields[1];
     final icao = fields[2].isEmpty ? null : fields[2];
     if (iata == null && icao == null) return null;
-    return Airline(name: fields[0], iataCode: iata, icaoCode: icao);
+    return Airline(
+        name: fields[0],
+        iataCode: iata,
+        icaoCode: icao,
+        country: fields[3].isEmpty ? null : fields[3]);
   }
 
   @override

@@ -7,11 +7,13 @@ class Airport {
     this.country,
     this.latitude,
     this.longitude,
+    this.type,
   });
 
   final String icao;
   final String? iata;
   final String name;
+  final String? type;
   final String? city;
   final String? country;
   final double? latitude;

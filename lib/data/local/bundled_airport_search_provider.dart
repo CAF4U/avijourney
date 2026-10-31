@@ -45,6 +45,7 @@ class BundledAirportSearchProvider implements AirportSearchProvider {
       icao: fields[0],
       iata: fields[1],
       name: fields[2],
+      type: fields[5].isEmpty ? null : fields[5],
       city: fields[3].isEmpty ? null : fields[3],
       country: fields[4].isEmpty ? null : fields[4],
       latitude: latitude,

@@ -89,3 +89,6 @@ Radar and Map each have their own on-screen Dark/Light selector. A black-and-gre
 
 
 V0.3.4 makes scan-centre changes recenter the map automatically. Airport and individual aircraft/flight search rows open Map at the selected location; their information buttons retain details and airport filters. Tap the radar location footer for saved airports or airport search. Live aircraft discovery remains limited to acquired positions.
+
+
+V0.3.7 adds linked aircraft, operator and airport detail pages from card headings and values. Route headings open the geographic connection map. Airport pages include general information, map/scan actions, follow controls, searchable observed arrivals/departures and nearby reported ground aircraft. No schedule provider was added; airport-wide scheduled times, gates, full fleets and unverified identity information remain unavailable.

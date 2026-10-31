@@ -70,3 +70,8 @@ Search displays a selectable list first, even for a single result. Category chip
 ### Location navigation
 
 Changing the scan centre through settings, airport selection, device location or a map point automatically recentres the map, including when Map is inactive. Ordinary feed refreshes do not interrupt manual panning. The radar location footer is a visible tap target offering saved airports and airport search. Location navigation does not wait for live-provider acquisition to finish.
+
+
+### Linked information cards (V0.3.7)
+
+Aircraft section headings, model/type and registration open the physical aircraft profile. Operator values open airline/operator profiles, with catalogue codes and country only for an exact name match. Airport values open dedicated airport pages with reference information, map/scan navigation, followed state, observed arrivals/departures, ground aircraft within 3 NM and local flight search. These are acquired-data lists, not complete scheduled airport boards; missing schedules, gates and statuses stay unavailable. Route headings navigate to the existing geographic map and fit the airport connection, which remains distinguished from an actual flight track. Back returns to the originating detail card.

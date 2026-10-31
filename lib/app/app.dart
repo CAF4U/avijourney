@@ -20,6 +20,7 @@ import '../data/repositories/live_aircraft_repository.dart';
 import '../data/repositories/mock_aircraft_repository.dart';
 import '../features/home/home_shell.dart';
 import 'app_controller.dart';
+import 'navigation/detail_navigation.dart';
 import 'mapping/map_viewport_controller.dart';
 
 class AviJourneyApp extends StatefulWidget {
@@ -49,6 +50,7 @@ class _AviJourneyAppState extends State<AviJourneyApp>
           MapViewportController(MapViewport.around(controller.trackingCenter));
 
   late TrackingCenter _lastTrackingCenter;
+  final detailNavigation = DetailNavigationController();
 
   @override
   void initState() {
@@ -115,6 +117,7 @@ class _AviJourneyAppState extends State<AviJourneyApp>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     controller.removeListener(_syncTrackingCenter);
+    detailNavigation.dispose();
     if (widget.controller == null) controller.dispose();
     if (widget.mapViewportController == null) mapViewportController.dispose();
     _httpClient?.close();
@@ -127,6 +130,8 @@ class _AviJourneyAppState extends State<AviJourneyApp>
         listenable: controller,
         builder: (context, _) => MaterialApp(
               title: 'CAF4U Aircraft Companion',
+              builder: (_, child) =>
+                  DetailNavigation(controller: detailNavigation, child: child!),
               debugShowCheckedModeBanner: false,
               theme: AppTheme.light(),
               darkTheme: AppTheme.dark(),
@@ -135,6 +140,7 @@ class _AviJourneyAppState extends State<AviJourneyApp>
                   : ThemeMode.dark,
               home: HomeShell(
                 controller: controller,
+                detailNavigation: detailNavigation,
                 mapViewportController: mapViewportController,
                 mapTileSource: const OpenStreetMapTileSource(),
                 showMapTiles: widget.showMapTiles,

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../core/errors/provider_exception.dart';
 import '../domain/models/airport.dart';
+import '../domain/models/airline.dart';
 import '../domain/models/aircraft_filter.dart';
 import '../domain/models/aircraft_route.dart';
 import '../domain/models/app_settings.dart';
@@ -266,6 +267,32 @@ class AppController extends ChangeNotifier {
       notifyListeners();
     }
     return result.status;
+  }
+
+  Airport airportDetails(Airport airport) {
+    final code = airport.icao.toUpperCase();
+    final reference = searchAirports(code)
+        .where((a) => a.icao.toUpperCase() == code)
+        .firstOrNull;
+    if (reference == null) return airport;
+    return Airport(
+        icao: airport.icao,
+        iata: airport.iata ?? reference.iata,
+        name: reference.name,
+        city: airport.city ?? reference.city,
+        country: airport.country ?? reference.country,
+        type: airport.type ?? reference.type,
+        latitude: airport.latitude ?? reference.latitude,
+        longitude: airport.longitude ?? reference.longitude);
+  }
+
+  Airline operatorDetails(String name) {
+    String normalize(String value) =>
+        value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    return _airlineSearchProvider.airlines
+            .where((a) => normalize(a.name) == normalize(name))
+            .firstOrNull ??
+        Airline(name: name);
   }
 
   List<Airport> get savedAirports {

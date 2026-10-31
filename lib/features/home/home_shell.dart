@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../app/app_controller.dart';
+import '../../app/navigation/detail_navigation.dart';
+import '../../domain/models/tracked_aircraft.dart';
 import '../../domain/models/airport.dart';
 import '../../domain/models/aircraft_route.dart';
 import '../../app/mapping/map_tile_source.dart';
@@ -18,6 +20,7 @@ import '../search/universal_search_sheet.dart';
 class HomeShell extends StatefulWidget {
   const HomeShell({
     required this.controller,
+    required this.detailNavigation,
     required this.mapViewportController,
     required this.mapTileSource,
     this.showMapTiles = true,
@@ -25,6 +28,7 @@ class HomeShell extends StatefulWidget {
   });
 
   final AppController controller;
+  final DetailNavigationController detailNavigation;
   final MapViewportController mapViewportController;
   final MapTileSource mapTileSource;
   final bool showMapTiles;
@@ -35,6 +39,31 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.detailNavigation.addListener(_openLinkedMap);
+  }
+
+  @override
+  void dispose() {
+    widget.detailNavigation.removeListener(_openLinkedMap);
+    super.dispose();
+  }
+
+  void _openLinkedMap() {
+    final target = widget.detailNavigation.target;
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    if (target is Airport) {
+      _trackAirport(target);
+    } else if (target is AircraftRoute) {
+      _showRoute(target, true);
+    } else if (target is TrackedAircraft) {
+      widget.controller.select(target.state.icao24);
+      _showSelectedAircraftOnMap();
+    }
+  }
 
   static const _destinations = <NavigationDestination>[
     NavigationDestination(icon: Icon(Icons.radar), label: 'Radar'),
@@ -77,7 +106,7 @@ class _HomeShellState extends State<HomeShell> {
                       maxLines: 2,
                       style:
                           TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                  Text('V0.3.6 · DEVELOPMENT',
+                  Text('V0.3.7 · DEVELOPMENT',
                       style: TextStyle(fontSize: 10, letterSpacing: 1.2)),
                 ]),
             actions: [
