@@ -62,6 +62,7 @@ class UniversalSearchService {
         tracked.identity?.typeCode,
         tracked.identity?.operatorName,
         airline?.name,
+        ...?airline?.aliases,
         airline?.iataCode,
         airline?.icaoCode,
         flight?.commercialFlightNumber,
@@ -117,8 +118,12 @@ class UniversalSearchService {
     }
 
     for (final airline in airlineList) {
-      if (_matches(
-          tokens, [airline.name, airline.iataCode, airline.icaoCode])) {
+      if (_matches(tokens, [
+        airline.name,
+        ...airline.aliases,
+        airline.iataCode,
+        airline.icaoCode
+      ])) {
         results.add(SearchResult(
           type: SearchResultType.airline,
           identifier: airline.identifier,

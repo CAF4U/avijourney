@@ -2,7 +2,7 @@ name: avijourney
 description: CAF4U Aircraft Companion - live aviation around you, a CAF4U Companion.
 publish_to: "none"
 
-version: 0.4.3+12
+version: 0.4.4+13
 
 environment:
   sdk: ">=3.4.0 <4.0.0"
@@ -27,3 +27,4 @@ flutter:
   assets:
     - assets/data/global_airports.tsv
     - assets/data/global_airlines.tsv
+    - assets/data/operator_references.json

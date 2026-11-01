@@ -17,6 +17,7 @@ import '../domain/models/followed_item.dart';
 import '../domain/models/search_result.dart';
 import '../data/local/static_airline_catalog.dart';
 import 'search/universal_search_service.dart';
+import 'discovery/operator_reference_resolver.dart';
 import '../domain/models/tracking_center.dart';
 import '../domain/providers/airport_search_provider.dart';
 import '../domain/providers/airline_search_provider.dart';
@@ -371,14 +372,8 @@ class AppController extends ChangeNotifier {
         longitude: airport.longitude ?? reference.longitude);
   }
 
-  Airline operatorDetails(String name) {
-    String normalize(String value) =>
-        value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
-    return _airlineSearchProvider.airlines
-            .where((a) => normalize(a.name) == normalize(name))
-            .firstOrNull ??
-        Airline(name: name);
-  }
+  Airline operatorDetails(String name) =>
+      resolveOperatorReference(name, _airlineSearchProvider.operatorReferences);
 
   List<Airport> get savedAirports {
     final airports = <Airport>[];

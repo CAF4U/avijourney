@@ -58,10 +58,8 @@ class AircraftFilter {
         (iata != null &&
             iata.isNotEmpty &&
             flight?.airlineIataCode?.toUpperCase() == iata) ||
-        aircraft.identity?.operatorName?.toUpperCase() ==
-            selectedAirline.name.toUpperCase() ||
-        flight?.airlineName?.toUpperCase() ==
-            selectedAirline.name.toUpperCase();
+        selectedAirline.matchesOperatorName(aircraft.identity?.operatorName) ||
+        selectedAirline.matchesOperatorName(flight?.airlineName);
   }
 
   static bool _sameAirport(Airport? a, Airport? b) =>

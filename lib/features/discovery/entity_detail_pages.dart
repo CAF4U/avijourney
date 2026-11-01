@@ -294,9 +294,14 @@ class OperatorDetailPage extends StatelessWidget {
                 'IATA': operator.iataCode ?? 'Unavailable',
                 'ICAO': operator.icaoCode ?? 'Unavailable',
                 'Country': operator.country ?? 'Unavailable',
-                'Source': operator.icaoCode == null && operator.iataCode == null
-                    ? 'Aircraft operator / owner enrichment; no exact airline catalogue match'
-                    : 'Bundled airline reference catalogue'
+                'Reference date': operator.referenceDate?.isNotEmpty == true
+                    ? operator.referenceDate!
+                    : 'Unavailable',
+                'Source': operator.source?.isNotEmpty == true
+                    ? operator.source!
+                    : operator.icaoCode == null && operator.iataCode == null
+                        ? 'Aircraft operator / owner enrichment; no exact airline catalogue match'
+                        : 'Bundled airline reference catalogue'
               }),
               const Text(
                   'An aircraft operator or registered owner is not necessarily the passenger-facing airline. Reference catalogue records do not establish current operating status.'),
