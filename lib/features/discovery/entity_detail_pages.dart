@@ -20,10 +20,12 @@ void openAirportDetails(
             airport: controller.airportDetails(airport),
             controller: controller)));
 void openOperatorDetails(
-        BuildContext context, String name, AppController controller) =>
+        BuildContext context, String name, AppController controller,
+        {bool asAirline = false, Airline? airlineReference}) =>
     Navigator.of(context).push(MaterialPageRoute<void>(
         builder: (_) => OperatorDetailPage(
-            operator: controller.operatorDetails(name),
+            operator: airlineReference ?? controller.operatorDetails(name),
+            asAirline: asAirline,
             controller: controller)));
 void openAircraftProfile(BuildContext context, TrackedAircraft aircraft,
         AppController controller) =>
@@ -258,8 +260,12 @@ class _AirportTrafficPageState extends State<AirportTrafficPage> {
 
 class OperatorDetailPage extends StatelessWidget {
   const OperatorDetailPage(
-      {required this.operator, required this.controller, super.key});
+      {required this.operator,
+      required this.controller,
+      this.asAirline = false,
+      super.key});
   final Airline operator;
+  final bool asAirline;
   final AppController controller;
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -276,33 +282,41 @@ class OperatorDetailPage extends StatelessWidget {
             label: operator.name);
         return Scaffold(
             key: const Key('operatorDetailPage'),
-            appBar: AppBar(title: const Text('Airline / operator'), actions: [
-              IconButton(
-                  tooltip: controller.isFollowing(item)
-                      ? 'Unfollow operator'
-                      : 'Follow operator',
-                  onPressed: () => controller.toggleFollowed(item),
-                  icon: Icon(controller.isFollowing(item)
-                      ? Icons.bookmark
-                      : Icons.bookmark_border))
-            ]),
+            appBar: AppBar(
+                title: Text(asAirline
+                    ? 'Airline details'
+                    : 'Aircraft operator details'),
+                actions: [
+                  IconButton(
+                      tooltip: controller.isFollowing(item)
+                          ? 'Unfollow operator'
+                          : 'Follow operator',
+                      onPressed: () => controller.toggleFollowed(item),
+                      icon: Icon(controller.isFollowing(item)
+                          ? Icons.bookmark
+                          : Icons.bookmark_border))
+                ]),
             body: ListView(padding: const EdgeInsets.all(20), children: [
               Text(operator.name,
                   style: Theme.of(context).textTheme.headlineSmall),
-              DetailSection(title: 'OPERATOR INFORMATION', rows: {
-                'Name': operator.name,
-                'IATA': operator.iataCode ?? 'Unavailable',
-                'ICAO': operator.icaoCode ?? 'Unavailable',
-                'Country': operator.country ?? 'Unavailable',
-                'Reference date': operator.referenceDate?.isNotEmpty == true
-                    ? operator.referenceDate!
-                    : 'Unavailable',
-                'Source': operator.source?.isNotEmpty == true
-                    ? operator.source!
-                    : operator.icaoCode == null && operator.iataCode == null
-                        ? 'Aircraft operator / owner enrichment; no exact airline catalogue match'
-                        : 'Bundled airline reference catalogue'
-              }),
+              DetailSection(
+                  title: asAirline
+                      ? 'AIRLINE INFORMATION'
+                      : 'OPERATOR INFORMATION',
+                  rows: {
+                    'Name': operator.name,
+                    'IATA': operator.iataCode ?? 'Unavailable',
+                    'ICAO': operator.icaoCode ?? 'Unavailable',
+                    'Country': operator.country ?? 'Unavailable',
+                    'Reference date': operator.referenceDate?.isNotEmpty == true
+                        ? operator.referenceDate!
+                        : 'Unavailable',
+                    'Source': operator.source?.isNotEmpty == true
+                        ? operator.source!
+                        : operator.icaoCode == null && operator.iataCode == null
+                            ? 'Aircraft operator / owner enrichment; no exact airline catalogue match'
+                            : 'Bundled airline reference catalogue'
+                  }),
               const Text(
                   'An aircraft operator or registered owner is not necessarily the passenger-facing airline. Reference catalogue records do not establish current operating status.'),
               const SizedBox(height: 16),
@@ -333,6 +347,7 @@ class AircraftProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final identity = aircraft.identity;
+    final airline = controller.flightAirline(aircraft);
     final navigation = DetailNavigation.maybeOf(context);
     final route = detailRoute(aircraft, controller);
     return Scaffold(
@@ -355,7 +370,14 @@ class AircraftProfilePage extends StatelessWidget {
           const Text(
               'Manufacturer, age, delivery date and aircraft photographs are unavailable from the current identity data.'),
           const SizedBox(height: 16),
-          DetailSection(title: 'OBSERVED OPERATION', rows: {
+          DetailSection(title: 'OBSERVED OPERATION', actions: {
+            if (airline.airline != null)
+              'Airline': () => openOperatorDetails(
+                  context, airline.name, controller,
+                  asAirline: true, airlineReference: airline.airline),
+          }, rows: {
+            'Airline': airline.name,
+            'Airline basis': airline.basis,
             'Identifier': aircraft.primaryIdentifier,
             'Callsign': aircraft.state.callsign,
             'Movement': estimatedMovement(aircraft.state),

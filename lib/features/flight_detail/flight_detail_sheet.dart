@@ -43,6 +43,7 @@ class FlightDetailView extends StatelessWidget {
   Widget build(BuildContext context) {
     final flight = aircraft.flight;
     final route = aircraft.route;
+    final airline = controller.flightAirline(aircraft);
     final connection = detailRoute(aircraft, controller);
     final navigation = DetailNavigation.maybeOf(context);
     final origin = flight?.origin ?? route?.origin;
@@ -81,13 +82,19 @@ class FlightDetailView extends StatelessWidget {
           : 'OPERATIONAL CALLSIGN · COMMERCIAL NUMBER UNRESOLVED'),
       const SizedBox(height: 16),
       DetailSection(title: 'IDENTITY', actions: {
-        if (flight?.airlineName case final name?)
-          'Airline': () => openOperatorDetails(context, name, controller)
+        if (airline.airline != null)
+          'Airline': () => openOperatorDetails(
+              context, airline.name, controller,
+              asAirline: true, airlineReference: airline.airline),
+        if (aircraft.identity?.operatorName case final name?)
+          'Operator': () => openOperatorDetails(context, name, controller)
       }, rows: {
         'Commercial number': flight?.isCommercialIdentityVerified == true
             ? flight!.commercialFlightNumber!
             : 'Unresolved',
-        'Airline': flight?.airlineName ?? 'Unavailable',
+        'Airline': airline.name,
+        'Airline basis': airline.basis,
+        'Operator': aircraft.identity?.operatorName ?? 'Unavailable',
         'Callsign': flight?.operationalCallsign ?? aircraft.state.callsign,
         'Status': flight?.status ?? 'Unavailable',
       }),

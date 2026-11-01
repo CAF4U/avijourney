@@ -94,3 +94,20 @@ Radar, Map and Live Metrics have shared manual aircraft refresh controls with a 
 Route airports use small hollow position dots with translucent code labels offset below and to either side. Aircraft use small heading-oriented symbols, a light selection outline and translucent callsign labels offset above/right. Symbols remain centred on the actual coordinates; visual reduction retains a 44-pixel aircraft tap target. Route fitting reserves space for map controls and offset labels.
 
 On Map, a compact translucent route strip replaces the large route information box and duplicate filter footer. It identifies the connection and current-area count, expands on tap to explain coverage and distinguish the connection from the actual track, and retains a clear-filter action. Other views retain their existing filter footer.
+
+
+### Airline and aircraft operator (V0.4.5)
+
+Cards and aircraft/flight details identify Airline and Operator separately.
+The flight airline comes from explicitly reported flight data when available;
+otherwise a unique three-letter callsign-prefix catalogue association can be
+shown, labelled as such and explicitly unverified as a marketing carrier.
+Neither the aircraft owner/operator nor the parent company is substituted for
+the airline. Unknown/ambiguous callsigns remain unavailable. No commercial
+flight number is derived from a callsign.
+
+Airline and operator links open separately labelled reference pages. Physical
+aircraft details retain the operator in the airframe section and put the flight
+airline in observed operational context. A Ryanair-associated RYR callsign on
+a Malta Air aircraft therefore displays both identities without conflating
+them or claiming a verified marketing-flight relationship.

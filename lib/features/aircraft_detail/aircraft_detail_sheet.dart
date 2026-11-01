@@ -48,6 +48,7 @@ class _AircraftDetailState extends State<_AircraftDetail> {
     final state = current.state;
     final identity = current.identity;
     final route = current.route;
+    final airline = controller.flightAirline(current);
     final origin = current.flight?.origin ?? route?.origin;
     final destination = current.flight?.destination ?? route?.destination;
     final connection = detailRoute(current, controller);
@@ -70,6 +71,15 @@ class _AircraftDetailState extends State<_AircraftDetail> {
           ? 'No callsign available'
           : 'Callsign ${state.callsign}'),
       const SizedBox(height: 20),
+      DetailSection(title: 'FLIGHT AIRLINE', actions: {
+        if (airline.airline != null)
+          'Airline': () => openOperatorDetails(
+              context, airline.name, controller,
+              asAirline: true, airlineReference: airline.airline),
+      }, rows: {
+        'Airline': airline.name,
+        'Airline basis': airline.basis
+      }),
       DetailSection(
           title: 'AIRCRAFT',
           onTitleTap: () => openAircraftProfile(context, current, controller),

@@ -18,6 +18,7 @@ import '../domain/models/search_result.dart';
 import '../data/local/static_airline_catalog.dart';
 import 'search/universal_search_service.dart';
 import 'discovery/operator_reference_resolver.dart';
+import 'discovery/flight_airline_attribution.dart';
 import '../domain/models/tracking_center.dart';
 import '../domain/providers/airport_search_provider.dart';
 import '../domain/providers/airline_search_provider.dart';
@@ -371,6 +372,9 @@ class AppController extends ChangeNotifier {
         latitude: airport.latitude ?? reference.latitude,
         longitude: airport.longitude ?? reference.longitude);
   }
+
+  FlightAirlineAttribution flightAirline(TrackedAircraft aircraft) =>
+      resolveFlightAirline(aircraft, _airlineSearchProvider.airlines);
 
   Airline operatorDetails(String name) =>
       resolveOperatorReference(name, _airlineSearchProvider.operatorReferences);

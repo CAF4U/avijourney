@@ -35,7 +35,7 @@ class AircraftCardsView extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: columns,
-              mainAxisExtent: 280,
+              mainAxisExtent: 312,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12),
           itemCount: aircraft.length,
@@ -54,6 +54,7 @@ class _AircraftCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = aircraft.state;
     final route = aircraft.route;
+    final airline = controller.flightAirline(aircraft);
     final origin = aircraft.flight?.origin ?? route?.origin;
     final destination = aircraft.flight?.destination ?? route?.destination;
     final connection = detailRoute(aircraft, controller);
@@ -78,20 +79,43 @@ class _AircraftCard extends StatelessWidget {
                               children: [
                             Text(aircraft.primaryIdentifier,
                                 style: Theme.of(context).textTheme.titleLarge),
-                            if (aircraft.identity?.operatorName
-                                case final name?)
-                              InkWell(
-                                  onTap: () => openOperatorDetails(
-                                      context, name, controller),
-                                  child: Text(name,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                          color: Theme.of(context)
+                            InkWell(
+                              key: Key('cardAirline-${state.icao24}'),
+                              onTap: airline.airline == null
+                                  ? null
+                                  : () => openOperatorDetails(
+                                      context, airline.name, controller,
+                                      asAirline: true,
+                                      airlineReference: airline.airline),
+                              child: Text('Airline: ${airline.cardLabel}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: airline.airline == null
+                                          ? null
+                                          : Theme.of(context)
                                               .colorScheme
-                                              .primary,
-                                          decoration:
-                                              TextDecoration.underline))),
+                                              .primary)),
+                            ),
+                            InkWell(
+                              key: Key('cardOperator-${state.icao24}'),
+                              onTap: aircraft.identity?.operatorName == null
+                                  ? null
+                                  : () => openOperatorDetails(
+                                      context,
+                                      aircraft.identity!.operatorName!,
+                                      controller),
+                              child: Text(
+                                  'Operator: ${aircraft.identity?.operatorName ?? 'Unavailable'}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary)),
+                            ),
                             InkWell(
                                 onTap: () => openAircraftProfile(
                                     context, aircraft, controller),
