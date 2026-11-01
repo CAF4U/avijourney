@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:avijourney/app/discovery/operator_reference_resolver.dart';
 import 'package:avijourney/data/local/bundled_airline_search_provider.dart';
 import 'package:avijourney/data/local/static_airline_catalog.dart';
