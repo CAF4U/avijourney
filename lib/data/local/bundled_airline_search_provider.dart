@@ -108,10 +108,12 @@ class BundledAirlineSearchProvider implements AirlineSearchProvider {
     if (tokens.isEmpty) return _airlines;
     return _airlines
         .where((airline) {
-          final searchable = [airline.name, airline.iataCode, airline.icaoCode]
-              .whereType<String>()
-              .join(' ')
-              .toLowerCase();
+          final searchable = [
+            airline.name,
+            ...airline.aliases,
+            airline.iataCode,
+            airline.icaoCode
+          ].whereType<String>().join(' ').toLowerCase();
           return tokens.every(searchable.contains);
         })
         .take(100)
