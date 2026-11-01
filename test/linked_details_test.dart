@@ -45,8 +45,12 @@ Future<void> startDetails(WidgetTester tester, {bool phone = false}) async {
 Future<void> tapVisible(WidgetTester tester, String key) async {
   final finder = find.byKey(Key(key));
   if (finder.evaluate().isEmpty) {
-    await tester.scrollUntilVisible(finder, -250,
-        scrollable: find.byType(Scrollable).first);
+    final scrollable = find.byType(Scrollable).first;
+    tester.state<ScrollableState>(scrollable).position.jumpTo(0);
+    await tester.pump();
+    if (finder.evaluate().isEmpty) {
+      await tester.scrollUntilVisible(finder, 250, scrollable: scrollable);
+    }
   }
   await tester.ensureVisible(finder);
   await tester.pumpAndSettle();

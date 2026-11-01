@@ -124,6 +124,8 @@ void main() {
     expect(find.text('Ryanair'), findsOneWidget);
     expect(find.text('Malta Air'), findsOneWidget);
     expect(find.textContaining('marketing carrier unverified'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pumpAndSettle();
     await tester.pumpWidget(MaterialApp(
         home: Scaffold(
             body: FlightDetailView(

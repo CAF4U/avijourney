@@ -137,7 +137,9 @@ void main() {
             layer.polylines.single.points.last.latitude, closeTo(50.7344, .01));
       } else {
         expect(find.text('BAW12'), findsOneWidget);
-        expect(find.textContaining('British Airways'), findsOneWidget);
+        expect(
+            find.text('Airline: British Airways (callsign)'), findsOneWidget);
+        expect(find.text('Operator: British Airways'), findsOneWidget);
       }
       await tester.tap(find.byKey(const Key('clearDisplayFilter')));
       await tester.pumpAndSettle();
