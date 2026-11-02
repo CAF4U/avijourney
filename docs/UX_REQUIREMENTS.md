@@ -111,3 +111,12 @@ aircraft details retain the operator in the airframe section and put the flight
 airline in observed operational context. A Ryanair-associated RYR callsign on
 a Malta Air aircraft therefore displays both identities without conflating
 them or claiming a verified marketing-flight relationship.
+
+
+### Geographic radar scope (V0.4.6)
+
+Radar takes its screen layout from the supplied gadget reference, without a hardware frame: circular geographic map, cyan range rings/crosshair and cardinal points, fixed-size heading-oriented aircraft silhouettes, offset compact callsign labels, and a yellow selected-aircraft highlight with a compact leader-line callout. The callout uses only reported identifier, model/type, altitude and heading; it never labels a departure or infers a commercial flight number. A subtle static sweep sector is decorative and does not represent a physical radar acquisition.
+
+Tiles and aircraft/trails share a Web Mercator camera, including zoom, panning and antimeridian wrapping. Scale is nominal nautical miles at the scan centre latitude. Latitude is limited to the geographic tile projection. The existing replaceable tile source supplies both map screens, with visible linked attribution. Tile failures retain the aircraft overlay and dark/light scope background. No new aircraft-provider requests are made by pan/zoom. Existing scan bounds, manual refresh cooldown, theme choice, clickable scan location and detail navigation are retained.
+
+The HUD shows acquired filtered target count, actual feed state (or paused), and latest aircraft observation time in local time, not a fabricated live clock. The Map shortcut opens the existing Map tab.

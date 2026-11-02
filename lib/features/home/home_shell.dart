@@ -101,6 +101,9 @@ class _HomeShellState extends State<HomeShell> {
           RadarView(
             controller: widget.controller,
             onOpenTrackingLocation: _openTrackingLocation,
+            tileSource: widget.mapTileSource,
+            showTiles: widget.showMapTiles,
+            onShowMap: () => setState(() => _index = 1),
           ),
           AircraftMapView(
             controller: widget.controller,
@@ -122,7 +125,7 @@ class _HomeShellState extends State<HomeShell> {
                       maxLines: 2,
                       style:
                           TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                  Text('V0.4.5 · DEVELOPMENT',
+                  Text('V0.4.6 · DEVELOPMENT',
                       style: TextStyle(fontSize: 10, letterSpacing: 1.2)),
                 ]),
             actions: [
