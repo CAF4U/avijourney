@@ -158,6 +158,7 @@ class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
       ),
       Expanded(
           child: ListView(
+        key: const Key('searchResultsList'),
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
           _coverage(),

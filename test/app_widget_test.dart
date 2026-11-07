@@ -63,8 +63,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('TRY AN EXAMPLE'), findsOneWidget);
-    expect(
-        find.textContaining('airports and airlines worldwide'), findsOneWidget);
+    expect(find.textContaining('Aircraft: scan area only'), findsOneWidget);
     final example = find.byKey(const Key('searchExample-JFK'));
     await tester.ensureVisible(example);
     await tester.tap(example);

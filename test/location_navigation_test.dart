@@ -157,7 +157,12 @@ void main() {
       await search(tester, 'BAW12');
       final result = app.search('BAW12').firstWhere((r) => r.type.name == type);
       final row = find.byKey(Key('searchResult-$type-${result.identifier}'));
-      await tester.ensureVisible(row);
+      await tester.scrollUntilVisible(row, 200,
+          scrollable: find
+              .descendant(
+                  of: find.byKey(const Key('searchResultsList')),
+                  matching: find.byType(Scrollable))
+              .first);
       await tester.tap(row);
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('universalSearchField')), findsNothing);

@@ -149,7 +149,12 @@ void main() {
     await app.refresh();
     await tester.pumpAndSettle();
     final result = find.byKey(const Key('searchResult-aircraft-4d22ff'));
-    await tester.ensureVisible(result);
+    await tester.scrollUntilVisible(result, 200,
+        scrollable: find
+            .descendant(
+                of: find.byKey(const Key('searchResultsList')),
+                matching: find.byType(Scrollable))
+            .first);
     expect(result, findsOneWidget);
     expect(repository.requests, initialRequests + 1);
   });
