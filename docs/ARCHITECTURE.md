@@ -1,4 +1,4 @@
-# AviJourney V0.3 Architecture
+# CAF4U Aircraft Companion V0.3 Architecture
 
 ## Principle
 

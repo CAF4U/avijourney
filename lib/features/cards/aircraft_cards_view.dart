@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../app/app_controller.dart';
+import '../../app/navigation/detail_navigation.dart';
+import '../discovery/entity_detail_pages.dart';
 import '../../domain/models/tracked_aircraft.dart';
 import '../aircraft_detail/aircraft_detail_sheet.dart';
 
@@ -20,7 +22,9 @@ class AircraftCardsView extends StatelessWidget {
       return Center(
           child: Text(savedOnly
               ? 'No saved aircraft yet'
-              : 'No aircraft match the filters'));
+              : controller.displayFilter?.routeOrigin != null
+                  ? 'No matching aircraft in the current tracking area.\nRoute information may be unavailable for some aircraft.'
+                  : 'No aircraft match the filters'));
     return LayoutBuilder(builder: (context, constraints) {
       final columns = constraints.maxWidth >= 900
           ? 3
@@ -31,7 +35,7 @@ class AircraftCardsView extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: columns,
-              mainAxisExtent: 250,
+              mainAxisExtent: 312,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12),
           itemCount: aircraft.length,
@@ -50,6 +54,11 @@ class _AircraftCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = aircraft.state;
     final route = aircraft.route;
+    final airline = controller.flightAirline(aircraft);
+    final origin = aircraft.flight?.origin ?? route?.origin;
+    final destination = aircraft.flight?.destination ?? route?.destination;
+    final connection = detailRoute(aircraft, controller);
+    final navigation = DetailNavigation.maybeOf(context);
     final saved = controller.saved.contains(state.icao24);
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -70,14 +79,56 @@ class _AircraftCard extends StatelessWidget {
                               children: [
                             Text(aircraft.primaryIdentifier,
                                 style: Theme.of(context).textTheme.titleLarge),
-                            Text(
-                                [
-                                  aircraft.identity?.operatorName,
-                                  aircraft.identity?.model ??
-                                      aircraft.identity?.typeCode
-                                ].whereType<String>().join(' · '),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis)
+                            InkWell(
+                              key: Key('cardAirline-${state.icao24}'),
+                              onTap: airline.airline == null
+                                  ? null
+                                  : () => openOperatorDetails(
+                                      context, airline.name, controller,
+                                      asAirline: true,
+                                      airlineReference: airline.airline),
+                              child: Text('Airline: ${airline.cardLabel}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: airline.airline == null
+                                          ? null
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .primary)),
+                            ),
+                            InkWell(
+                              key: Key('cardOperator-${state.icao24}'),
+                              onTap: aircraft.identity?.operatorName == null
+                                  ? null
+                                  : () => openOperatorDetails(
+                                      context,
+                                      aircraft.identity!.operatorName!,
+                                      controller),
+                              child: Text(
+                                  'Operator: ${aircraft.identity?.operatorName ?? 'Unavailable'}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary)),
+                            ),
+                            InkWell(
+                                onTap: () => openAircraftProfile(
+                                    context, aircraft, controller),
+                                child: Text(
+                                    aircraft.identity?.model ??
+                                        aircraft.identity?.typeCode ??
+                                        'Aircraft details',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary))),
                           ])),
                       IconButton(
                           tooltip:
@@ -90,14 +141,28 @@ class _AircraftCard extends StatelessWidget {
                     Row(children: [
                       Expanded(
                           child: _Airport(
-                              code: route?.origin?.displayCode ?? '—',
-                              name:
-                                  route?.origin?.name ?? 'Origin unavailable')),
-                      const Icon(Icons.arrow_forward, size: 18),
+                              onTap: origin == null
+                                  ? null
+                                  : () => openAirportDetails(
+                                      context, origin, controller),
+                              code: origin?.displayCode ?? '—',
+                              name: origin?.name ?? 'Origin unavailable')),
+                      IconButton(
+                          tooltip: 'Show route on map',
+                          onPressed: connection != null &&
+                                  connection.hasCoordinates &&
+                                  navigation != null
+                              ? () => navigation.route(connection)
+                              : null,
+                          icon: const Icon(Icons.route, size: 18)),
                       Expanded(
                           child: _Airport(
-                              code: route?.destination?.displayCode ?? '—',
-                              name: route?.destination?.name ??
+                              onTap: destination == null
+                                  ? null
+                                  : () => openAirportDetails(
+                                      context, destination, controller),
+                              code: destination?.displayCode ?? '—',
+                              name: destination?.name ??
                                   'Destination unavailable',
                               alignEnd: true))
                     ]),
@@ -135,12 +200,18 @@ class _AircraftCard extends StatelessWidget {
 
 class _Airport extends StatelessWidget {
   const _Airport(
-      {required this.code, required this.name, this.alignEnd = false});
+      {required this.code,
+      required this.name,
+      this.alignEnd = false,
+      this.onTap});
   final String code;
   final String name;
   final bool alignEnd;
+  final VoidCallback? onTap;
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) => InkWell(
+      onTap: onTap,
+      child: Column(
           crossAxisAlignment:
               alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
@@ -152,7 +223,7 @@ class _Airport extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall)
-          ]);
+          ]));
 }
 
 class _Metric extends StatelessWidget {

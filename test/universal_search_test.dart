@@ -60,7 +60,21 @@ void main() {
 
   test('searches registration and aircraft type', () {
     expect(search('g-xlea'), isNotEmpty);
+    expect(search('gxlea'), isNotEmpty);
+    expect(search('BAW 283'), isNotEmpty);
+    expect(search('40 62 1d'), isNotEmpty);
     expect(search('  a380 '), isNotEmpty);
+  });
+
+  test('never guesses a commercial number from an operational callsign', () {
+    final unresolved =
+        TrackedAircraft(state: aircraft.state, identity: aircraft.identity);
+    final results = const UniversalSearchService().search(
+        query: 'BA283',
+        aircraft: [unresolved],
+        airlines: StaticAirlineCatalog.entries,
+        airports: lhr);
+    expect(results.where((r) => r.type == SearchResultType.flight), isEmpty);
   });
 
   test('searches airline, route, airport and combinations', () {

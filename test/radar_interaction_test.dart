@@ -19,12 +19,14 @@ void main() {
     addTearDown(controller.dispose);
     await controller.initialize();
     controller.pause();
+    var mapOpened = false;
 
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(
         body: RadarView(
           controller: controller,
           onOpenTrackingLocation: () {},
+          onShowMap: () => mapOpened = true,
         ),
       ),
     ));
@@ -32,6 +34,14 @@ void main() {
 
     expect(find.byKey(const Key('radarNorthIndicator')), findsOneWidget);
     expect(find.text('N'), findsOneWidget);
+    for (final cardinal in ['E', 'S', 'W']) {
+      expect(find.text(cardinal), findsOneWidget);
+    }
+    expect(find.text('PAUSED · ${controller.visibleAircraft.length}'),
+        findsOneWidget);
+    expect(find.byKey(const Key('radarObservationTime')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('radarMapShortcut')));
+    expect(mapOpened, isTrue);
 
     final canvas = find.byKey(const Key('radarCanvas'));
     final size = tester.getSize(canvas);

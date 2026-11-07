@@ -1,4 +1,5 @@
 import '../../domain/models/app_settings.dart';
+import '../../domain/models/aircraft_alert.dart';
 import '../../domain/models/tracking_center.dart';
 import '../../domain/models/followed_item.dart';
 
@@ -8,12 +9,14 @@ class PersistedAppState {
     required this.settings,
     required this.savedAircraft,
     this.followedItems = const {},
+    this.alerts = const [],
   });
 
   final TrackingCenter trackingCenter;
   final AppSettings settings;
   final Set<String> savedAircraft;
   final Set<FollowedItem> followedItems;
+  final List<AircraftAlert> alerts;
 }
 
 abstract interface class AppPreferencesStore {
