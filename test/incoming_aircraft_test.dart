@@ -225,7 +225,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Likely incoming aircraft'), findsOneWidget);
     final map = find.byKey(const Key('showIncomingOnMap'));
-    await tester.ensureVisible(map);
+    await tester.scrollUntilVisible(map, 200,
+        scrollable: find
+            .descendant(
+                of: find.byKey(const Key('incomingResultList')),
+                matching: find.byType(Scrollable))
+            .first);
     await tester.tap(map);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('mapMarker-4d22ff')), findsOneWidget);
