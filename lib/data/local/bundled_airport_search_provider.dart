@@ -45,6 +45,7 @@ class BundledAirportSearchProvider implements AirportSearchProvider {
       icao: fields[0],
       iata: fields[1],
       name: fields[2],
+      type: fields[5].isEmpty ? null : fields[5],
       city: fields[3].isEmpty ? null : fields[3],
       country: fields[4].isEmpty ? null : fields[4],
       latitude: latitude,
@@ -70,7 +71,10 @@ class BundledAirportSearchProvider implements AirportSearchProvider {
             airport.city,
             airport.country,
           ].whereType<String>().join(' ').toLowerCase();
-          return tokens.every(searchable.contains);
+          return tokens.every(searchable.contains) ||
+              searchable
+                  .replaceAll(RegExp(r'\s+'), '')
+                  .contains(query.toLowerCase().replaceAll(RegExp(r'\s+'), ''));
         })
         .take(100)
         .toList(growable: false);

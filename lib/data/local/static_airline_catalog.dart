@@ -1,10 +1,12 @@
 import '../../domain/models/airline.dart';
+import 'verified_operator_references.dart';
 import '../../domain/providers/airline_search_provider.dart';
 
 class StaticAirlineCatalog implements AirlineSearchProvider {
   const StaticAirlineCatalog();
 
   static const entries = <Airline>[
+    ...verifiedOperatorReferences,
     Airline(name: 'British Airways', iataCode: 'BA', icaoCode: 'BAW'),
     Airline(name: 'easyJet UK', iataCode: 'U2', icaoCode: 'EZY'),
     Airline(name: 'Emirates', iataCode: 'EK', icaoCode: 'UAE'),
@@ -56,6 +58,9 @@ class StaticAirlineCatalog implements AirlineSearchProvider {
   List<Airline> get airlines => entries;
 
   @override
+  List<Airline> get operatorReferences => entries;
+
+  @override
   Future<void> initialize() async {}
 
   @override
@@ -65,6 +70,7 @@ class StaticAirlineCatalog implements AirlineSearchProvider {
     return entries
         .where((airline) => [
               airline.name,
+              ...airline.aliases,
               airline.iataCode,
               airline.icaoCode,
             ].whereType<String>().any(

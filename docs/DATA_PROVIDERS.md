@@ -1,4 +1,4 @@
-# AviJourney Data Providers
+# CAF4U Aircraft Companion Data Providers
 
 ## Provider philosophy
 
@@ -9,6 +9,8 @@ Every external service is replaceable. Provider-specific JSON structures termina
 Use for ICAO24, callsign, latitude/longitude, altitude, velocity, track, vertical rate, squawk/on-ground/last-contact when supplied.
 
 Use geographically bounded requests rather than global queries.
+
+Access/licensing review, 7 November 2026: current [OpenSky terms](https://opensky-network.org/about/terms-of-use) require a written agreement for operational REST API use and use by commercial entities. Confirm CAF4U's existing agreement before broader deployment; anonymous endpoint availability does not grant a production licence. See [incoming aircraft research](INCOMING_AIRCRAFT_DATA_RESEARCH.md).
 
 ### Free-first quota strategy
 
@@ -22,7 +24,7 @@ Use geographically bounded requests rather than global queries.
 ### V0.3 implementation notes
 
 The live implementation uses an anonymous, geographically bounded
-`/api/states/all` request. AviJourney enforces a minimum 30-second acquisition
+`/api/states/all` request. CAF4U Aircraft Companion enforces a minimum 30-second acquisition
 cadence, pauses the central timer outside the foreground, and retains the last
 valid snapshot when OpenSky is offline, rate limited, or temporarily fails.
 Optional OAuth client credentials may be added later without changing widgets

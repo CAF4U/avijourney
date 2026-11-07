@@ -11,6 +11,10 @@ class AircraftState {
     this.squawk,
     this.onGround = false,
     required this.observedAt,
+    this.positionObservedAt,
+    this.hasPositionTimestamp = true,
+    this.hasGroundState = true,
+    this.hasSpeed = true,
   });
 
   final String icao24;
@@ -24,4 +28,10 @@ class AircraftState {
   final String? squawk;
   final bool onGround;
   final DateTime observedAt;
+  final DateTime? positionObservedAt;
+  final bool hasPositionTimestamp;
+  final bool hasGroundState;
+  final bool hasSpeed;
+  DateTime? get positionTime =>
+      hasPositionTimestamp ? positionObservedAt ?? observedAt : null;
 }

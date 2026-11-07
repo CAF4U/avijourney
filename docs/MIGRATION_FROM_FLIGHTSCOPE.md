@@ -42,4 +42,4 @@ Reference live-data commit: `82729ea`
 
 ## Naming
 
-FlightScope was a prototype name and collides with an established brand. The Flutter application is **AviJourney**.
+FlightScope was a prototype name and collides with an established brand. The Flutter application is **CAF4U Aircraft Companion**.

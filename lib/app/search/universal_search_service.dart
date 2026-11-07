@@ -1,6 +1,8 @@
 import '../../domain/models/airline.dart';
 import '../../domain/models/airport.dart';
+import '../../domain/models/aircraft_route.dart';
 import '../../domain/models/search_result.dart';
+import '../../domain/models/search_scope.dart';
 import '../../domain/models/tracked_aircraft.dart';
 
 class UniversalSearchService {
@@ -8,6 +10,7 @@ class UniversalSearchService {
 
   List<SearchResult> search({
     required String query,
+    SearchScope scope = SearchScope.all,
     required Iterable<TrackedAircraft> aircraft,
     required Iterable<Airline> airlines,
     required Iterable<Airport> airports,
@@ -17,6 +20,31 @@ class UniversalSearchService {
     final results = <SearchResult>[];
     final airlineList = airlines.toList(growable: false);
     final routeKeys = <String>{};
+    final airportList = {for (final a in airports) a.icao: a}.values.toList();
+    final codes = routeCodes(query);
+    if (codes != null) {
+      Airport? lookup(String code) => airportList
+          .where((a) =>
+              a.iata?.toUpperCase() == code || a.icao.toUpperCase() == code)
+          .firstOrNull;
+      final origin = lookup(codes.$1);
+      final destination = lookup(codes.$2);
+      if (origin != null &&
+          destination != null &&
+          origin.icao != destination.icao) {
+        final connection =
+            AircraftRoute(origin: origin, destination: destination);
+        routeKeys.add(connection.identifier);
+        results.add(SearchResult(
+            type: SearchResultType.route,
+            identifier: connection.identifier,
+            title: connection.label,
+            subtitle: '${origin.name} → ${destination.name}',
+            matchReason:
+                'Airport connection · aircraft limited to current tracking area',
+            value: connection));
+      }
+    }
 
     for (final tracked in aircraft) {
       final flight = tracked.flight;
@@ -30,11 +58,13 @@ class UniversalSearchService {
           : null;
       final common = <String?>[
         callsign,
+        tracked.state.icao24,
         tracked.identity?.registration,
         tracked.identity?.model,
         tracked.identity?.typeCode,
         tracked.identity?.operatorName,
         airline?.name,
+        ...?airline?.aliases,
         airline?.iataCode,
         airline?.icaoCode,
         flight?.commercialFlightNumber,
@@ -47,7 +77,11 @@ class UniversalSearchService {
         destination?.name,
         destination?.city,
       ];
-      if (_matches(tokens, common)) {
+      final matches = codes == null
+          ? _matches(tokens, common)
+          : _airportCode(origin, codes.$1) &&
+              _airportCode(destination, codes.$2);
+      if (matches) {
         results.add(SearchResult(
           type: SearchResultType.aircraft,
           identifier: tracked.state.icao24,
@@ -56,7 +90,7 @@ class UniversalSearchService {
             tracked.identity?.model ?? tracked.identity?.typeCode,
             airline?.name ?? tracked.identity?.operatorName,
           ].whereType<String>().join(' · '),
-          matchReason: 'Matched live aircraft identity, operator or route',
+          matchReason: 'Matched acquired aircraft identity, operator or route',
           value: tracked,
         ));
         results.add(SearchResult(
@@ -70,24 +104,28 @@ class UniversalSearchService {
           value: tracked,
         ));
       }
-      if (routeLabel != null && _matches(tokens, common)) {
-        final key = routeLabel.toUpperCase();
+      if (origin != null && destination != null && matches) {
+        final key = '${origin.icao}-${destination.icao}';
         if (routeKeys.add(key)) {
           results.add(SearchResult(
             type: SearchResultType.route,
             identifier: key,
-            title: routeLabel,
-            subtitle: airline?.name ?? 'Known live route',
+            title: routeLabel!,
+            subtitle: airline?.name ?? 'Known acquired route',
             matchReason: 'Matched origin and destination',
-            value: tracked,
+            value: AircraftRoute(origin: origin, destination: destination),
           ));
         }
       }
     }
 
     for (final airline in airlineList) {
-      if (_matches(
-          tokens, [airline.name, airline.iataCode, airline.icaoCode])) {
+      if (_matches(tokens, [
+        airline.name,
+        ...airline.aliases,
+        airline.iataCode,
+        airline.icaoCode
+      ])) {
         results.add(SearchResult(
           type: SearchResultType.airline,
           identifier: airline.identifier,
@@ -100,9 +138,18 @@ class UniversalSearchService {
         ));
       }
     }
-    for (final airport in airports) {
-      if (_matches(
-          tokens, [airport.iata, airport.icao, airport.name, airport.city])) {
+    for (final airport in airportList) {
+      if (_matches(tokens,
+              [airport.iata, airport.icao, airport.name, airport.city]) ||
+          [
+            airport.iata,
+            airport.icao,
+            airport.name,
+            airport.city
+          ].whereType<String>().any((field) => field
+              .toUpperCase()
+              .replaceAll(RegExp(r'\s+'), '')
+              .contains(query.toUpperCase().replaceAll(RegExp(r'\s+'), '')))) {
         results.add(SearchResult(
           type: SearchResultType.airport,
           identifier: airport.icao,
@@ -114,12 +161,27 @@ class UniversalSearchService {
         ));
       }
     }
-    return results;
+    return results.where((r) => scope.includes(r.type)).toList(growable: false);
   }
+
+  static (String, String)? routeCodes(String query) {
+    final match = RegExp(
+            r'^\s*([A-Z]{3,4})\s*(?:->|→|[-–—])\s*([A-Z]{3,4})\s*$',
+            caseSensitive: false)
+        .firstMatch(query);
+    return match == null
+        ? null
+        : (match[1]!.toUpperCase(), match[2]!.toUpperCase());
+  }
+
+  static bool _airportCode(Airport? airport, String code) =>
+      airport != null &&
+      (airport.icao.toUpperCase() == code ||
+          airport.iata?.toUpperCase() == code);
 
   static List<String> _tokens(String value) => value
       .toUpperCase()
-      .replaceAll(RegExp(r'[-–—>]+'), ' ')
+      .replaceAll(RegExp(r'[-–—>→]+'), ' ')
       .split(RegExp(r'\s+'))
       .where((token) => token.isNotEmpty)
       .toList(growable: false);
@@ -129,7 +191,15 @@ class UniversalSearchService {
         .whereType<String>()
         .map((field) => field.toUpperCase().replaceAll(RegExp(r'\s+'), ' '))
         .join(' ');
-    return tokens.every(haystack.contains);
+    if (tokens.every(haystack.contains)) return true;
+    // Accept registrations/callsigns with or without separators, e.g.
+    // 9H-VUA / 9HVUA and RYR 91RL / RYR91RL. Never transform airline codes.
+    final compact = tokens.join().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+    return compact.length >= 3 &&
+        fields.whereType<String>().any((field) => field
+            .toUpperCase()
+            .replaceAll(RegExp(r'[^A-Z0-9]'), '')
+            .contains(compact));
   }
 
   static Airline? _airlineFor(String callsign, List<Airline> airlines) {

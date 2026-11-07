@@ -147,6 +147,13 @@ class OpenSkyAircraftPositionProvider implements AircraftPositionProvider {
           verticalRateFeetPerMinute: (_asDouble(value[11]) ?? 0) * 196.8504,
           squawk: _nullableString(value[14]),
           onGround: value[8] == true,
+          hasGroundState: value[8] is bool,
+          hasSpeed: _asDouble(value[9]) != null,
+          hasPositionTimestamp: _asInt(value[3]) != null,
+          positionObservedAt: _asInt(value[3]) == null
+              ? null
+              : DateTime.fromMillisecondsSinceEpoch(_asInt(value[3])! * 1000,
+                  isUtc: true),
           observedAt: DateTime.fromMillisecondsSinceEpoch(
             (observedSeconds ?? 0) * 1000,
             isUtc: true,
