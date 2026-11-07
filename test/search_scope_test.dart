@@ -90,7 +90,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(
         find.textContaining(
-            'automatic incoming-aircraft identification are not connected yet'),
+            'automatic aircraft assignment lookup are not connected'),
         findsOneWidget);
   });
 

@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import '../../core/errors/provider_exception.dart';
 import '../../domain/models/aircraft_state.dart';
 import '../../domain/providers/aircraft_position_provider.dart';
+import '../../domain/providers/aircraft_lookup_provider.dart';
 
 class GeographicBounds {
   const GeographicBounds({
@@ -22,7 +23,8 @@ class GeographicBounds {
   final double maximumLongitude;
 }
 
-class OpenSkyAircraftPositionProvider implements AircraftPositionProvider {
+class OpenSkyAircraftPositionProvider
+    implements AircraftPositionProvider, AircraftLookupProvider {
   OpenSkyAircraftPositionProvider({
     required http.Client client,
     Uri? endpoint,
@@ -81,6 +83,20 @@ class OpenSkyAircraftPositionProvider implements AircraftPositionProvider {
       centerLongitude: centerLongitude,
       radiusNauticalMiles: radiusNauticalMiles,
     );
+    return _fetch(uri);
+  }
+
+  @override
+  Future<AircraftState?> fetchByAddress(String icao24) async {
+    final key = icao24.trim().toLowerCase();
+    if (!RegExp(r'^[0-9a-f]{6}$').hasMatch(key))
+      throw ArgumentError('Invalid ICAO24 address');
+    final states =
+        await _fetch(_endpoint.replace(queryParameters: {'icao24': key}));
+    return states.where((s) => s.icao24 == key).firstOrNull;
+  }
+
+  Future<List<AircraftState>> _fetch(Uri uri) async {
     try {
       final response = await _client.get(uri).timeout(timeout);
       if (response.statusCode == 429) {

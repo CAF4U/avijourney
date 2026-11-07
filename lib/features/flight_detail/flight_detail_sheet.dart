@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../aircraft_detail/incoming_aircraft_sheet.dart';
 
 import '../../app/app_controller.dart';
 import '../../app/navigation/detail_navigation.dart';
@@ -80,6 +81,12 @@ class FlightDetailView extends StatelessWidget {
       Text(flight?.isCommercialIdentityVerified == true
           ? 'VERIFIED COMMERCIAL FLIGHT'
           : 'OPERATIONAL CALLSIGN · COMMERCIAL NUMBER UNRESOLVED'),
+      OutlinedButton.icon(
+          key: const Key('findIncomingAircraft'),
+          onPressed: () => showIncomingAircraft(context, controller, aircraft,
+              initialAirport: origin),
+          icon: const Icon(Icons.flight_land),
+          label: const Text('Find incoming aircraft')),
       const SizedBox(height: 16),
       DetailSection(title: 'IDENTITY', actions: {
         if (airline.airline != null)

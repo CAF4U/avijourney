@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../aircraft_detail/incoming_aircraft_sheet.dart';
 
 import '../../app/app_controller.dart';
 import '../../core/widgets/manual_refresh_button.dart';
@@ -40,7 +41,7 @@ class _AircraftDetailState extends State<_AircraftDetail> {
       );
 
   Widget _buildDetails(BuildContext context) {
-    final latest = controller.aircraft
+    final latest = controller.mapAircraft
         .where((item) => item.state.icao24 == aircraft.state.icao24)
         .firstOrNull;
     if (latest != null) _lastKnown = latest;
@@ -70,6 +71,12 @@ class _AircraftDetailState extends State<_AircraftDetail> {
       Text(state.callsign.isEmpty
           ? 'No callsign available'
           : 'Callsign ${state.callsign}'),
+      OutlinedButton.icon(
+          key: const Key('findIncomingAircraft'),
+          onPressed: () => showIncomingAircraft(context, controller, current,
+              initialAirport: origin),
+          icon: const Icon(Icons.flight_land),
+          label: const Text('Find incoming aircraft')),
       const SizedBox(height: 20),
       DetailSection(title: 'FLIGHT AIRLINE', actions: {
         if (airline.airline != null)

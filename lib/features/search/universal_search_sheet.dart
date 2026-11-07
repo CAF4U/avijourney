@@ -274,7 +274,7 @@ class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
                                           fontWeight: FontWeight.bold)),
                                   SizedBox(height: 12),
                                   Text(
-                                      'Worldwide live aircraft lookup, flight schedules and automatic incoming-aircraft identification are not connected yet.'),
+                                      'To locate a known aircraft beyond the scan area, open its aircraft or flight details and choose Find incoming aircraft. Flight-number schedules and automatic aircraft assignment lookup are not connected.'),
                                   SizedBox(height: 8),
                                   Text(
                                       'If you already know the aircraft registration, ICAO24 address or current callsign, search it in the scan area. A departing flight and its incoming leg usually have different callsigns.'),

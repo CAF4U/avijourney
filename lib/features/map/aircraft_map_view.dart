@@ -82,7 +82,7 @@ class _AircraftMapViewState extends State<AircraftMapView>
       bounds: LatLngBounds.fromPoints([
         LatLng(route.origin.latitude!, route.origin.longitude!),
         LatLng(route.destination.latitude!, route.destination.longitude!),
-        ...widget.controller.visibleAircraft
+        ...widget.controller.mapAircraft
             .map((a) => LatLng(a.state.latitude, a.state.longitude)),
       ]),
       padding: const EdgeInsets.fromLTRB(64, 120, 72, 88),
@@ -107,7 +107,7 @@ class _AircraftMapViewState extends State<AircraftMapView>
 
   Widget _buildMap(BuildContext context) {
     final viewport = widget.viewportController.viewport;
-    final route = widget.controller.mapRoute;
+    final route = widget.controller.incomingRoute ?? widget.controller.mapRoute;
     final light = Theme.of(context).brightness == Brightness.light;
     return ColoredBox(
       color: Theme.of(context).colorScheme.surface,
@@ -230,7 +230,7 @@ class _AircraftMapViewState extends State<AircraftMapView>
               MarkerLayer(
                 markers: buildAircraftMapMarkers(
                   context: context,
-                  aircraft: widget.controller.visibleAircraft,
+                  aircraft: widget.controller.mapAircraft,
                   selectedIcao24: widget.controller.selectedIcao24,
                   showLabels: _zoom >= 9,
                   onTap: _selectAircraft,
@@ -268,7 +268,7 @@ class _AircraftMapViewState extends State<AircraftMapView>
               )),
             ),
           ],
-          if (route != null)
+          if (route != null && widget.controller.incomingMapTarget == null)
             Positioned(
               left: 12,
               right: 12,
@@ -285,6 +285,35 @@ class _AircraftMapViewState extends State<AircraftMapView>
                     )),
               ),
             ),
+          if (widget.controller.incomingMapTarget case final result?)
+            Positioned(
+                left: 12,
+                right: 12,
+                bottom: _showTrackHere ? 80 : 24,
+                child: Material(
+                    color:
+                        Theme.of(context).colorScheme.surface.withOpacity(.94),
+                    borderRadius: BorderRadius.circular(12),
+                    child: ListTile(
+                        dense: true,
+                        title: Text('${result.label} · lookup assessment'),
+                        subtitle: Text(
+                            '${result.address.toUpperCase()} · Lookup snapshot\n${result.aircraft?.state.positionTime?.toUtc().toIso8601String() ?? "Position time unavailable"} · Airport connection only'),
+                        trailing:
+                            Row(mainAxisSize: MainAxisSize.min, children: [
+                          IconButton(
+                              tooltip:
+                                  'Update incoming aircraft (30-second cache)',
+                              onPressed: widget.controller.incomingMapRefreshing
+                                  ? null
+                                  : () => unawaited(
+                                      widget.controller.refreshIncomingMap()),
+                              icon: const Icon(Icons.refresh)),
+                          IconButton(
+                              tooltip: 'Clear incoming aircraft',
+                              onPressed: widget.controller.clearIncomingOnMap,
+                              icon: const Icon(Icons.close)),
+                        ])))),
           Positioned(
               top: 12,
               left: 12,

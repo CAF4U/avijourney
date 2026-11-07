@@ -20,6 +20,7 @@ import '../data/repositories/live_aircraft_repository.dart';
 import '../data/repositories/mock_aircraft_repository.dart';
 import '../features/home/home_shell.dart';
 import 'app_controller.dart';
+import 'incoming_aircraft_service.dart';
 import '../data/weather/awc_weather_provider.dart';
 import '../data/weather/shared_preferences_weather_cache.dart';
 import 'navigation/detail_navigation.dart';
@@ -78,6 +79,10 @@ class _AviJourneyAppState extends State<AviJourneyApp>
     final client = http.Client();
     _httpClient = client;
     return AppController(
+      incomingService: IncomingAircraftService(
+          positions: OpenSkyAircraftPositionProvider(client: client),
+          enrichment: HexDbAircraftEnrichmentProvider(
+              client: client, successTtl: const Duration(minutes: 5))),
       repository: LiveAircraftRepository(
         positions: OpenSkyAircraftPositionProvider(client: client),
         enrichment: HexDbAircraftEnrichmentProvider(client: client),

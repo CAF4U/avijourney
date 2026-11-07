@@ -5,6 +5,10 @@ subscriptions, API keys or paid requests were created. No supplier was contacted
 Prices and terms need reconfirmation before procurement. No authenticated
 responses or airline coverage claims have been independently tested.
 
+## Implementation update
+
+V0.4.8 implements targeted global position lookup through the existing OpenSky ICAO24 filter and incoming-candidate inference using current callsign route enrichment. This requires a known aircraft address from the selected record and does not require a new subscription. See [implementation](INCOMING_AIRCRAFT_IMPLEMENTATION.md). The provider comparison below remains relevant to discovering an unknown assignment from a commercial flight number.
+
 ## Decision
 
 Ship search usability improvements using existing acquired aircraft and offline

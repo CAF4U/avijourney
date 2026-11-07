@@ -125,7 +125,7 @@ class _HomeShellState extends State<HomeShell> {
                       maxLines: 2,
                       style:
                           TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                  Text('V0.4.7 · DEVELOPMENT',
+                  Text('V0.4.8 · DEVELOPMENT',
                       style: TextStyle(fontSize: 10, letterSpacing: 1.2)),
                 ]),
             actions: [
@@ -234,15 +234,28 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   void _showSelectedAircraftOnMap() {
-    final selected = widget.controller.aircraft
+    final selected = [
+      ...widget.controller.mapAircraft,
+      ...widget.controller.aircraft
+    ]
         .where((item) => item.state.icao24 == widget.controller.selectedIcao24)
         .firstOrNull;
     if (selected != null) {
-      widget.controller.setDisplayFilter(null);
+      if (!identical(widget.controller.incomingMapTarget?.aircraft, selected)) {
+        widget.controller.setDisplayFilter(null);
+      }
       widget.mapViewportController.update(MapViewport(
           latitude: selected.state.latitude,
           longitude: selected.state.longitude,
-          zoom: 10));
+          zoom: 10,
+          route: widget.controller.incomingMapTarget == null
+              ? null
+              : (selected.route?.origin != null &&
+                      selected.route?.destination != null
+                  ? AircraftRoute(
+                      origin: selected.route!.origin!,
+                      destination: selected.route!.destination!)
+                  : null)));
     }
     setState(() => _index = 1);
   }

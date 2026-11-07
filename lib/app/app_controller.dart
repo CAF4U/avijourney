@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'incoming_aircraft_service.dart';
+import '../domain/models/incoming_aircraft.dart';
 
 import 'package:flutter/foundation.dart';
 
@@ -32,6 +34,7 @@ enum FeedStatus { connecting, live, cached, offline, rateLimited, error }
 class AppController extends ChangeNotifier {
   AppController({
     required AircraftRepository repository,
+    this.incomingService,
     AirportWeatherProvider weatherProvider = const UnavailableWeatherProvider(),
     WeatherCacheStore? weatherCache,
     DateTime Function()? clock,
@@ -54,6 +57,57 @@ class AppController extends ChangeNotifier {
         _airportSearchProvider = airportSearchProvider,
         _airlineSearchProvider = airlineSearchProvider,
         _searchService = searchService;
+
+  final IncomingAircraftService? incomingService;
+  IncomingAircraft? incomingMapTarget;
+  List<TrackedAircraft> get mapAircraft {
+    final target = incomingMapTarget?.aircraft;
+    return target == null ? visibleAircraft : [target];
+  }
+
+  bool incomingMapRefreshing = false;
+  Future<void> refreshIncomingMap() async {
+    final previous = incomingMapTarget;
+    if (_disposed ||
+        previous == null ||
+        incomingService == null ||
+        incomingMapRefreshing) return;
+    incomingMapRefreshing = true;
+    notifyListeners();
+    try {
+      final next = await incomingService!.find(
+          address: previous.address,
+          airport: previous.airport,
+          outboundCallsign: previous.outboundCallsign,
+          expectedRegistration: previous.aircraft?.identity?.registration);
+      if (!_disposed && identical(incomingMapTarget, previous))
+        incomingMapTarget = next;
+    } finally {
+      incomingMapRefreshing = false;
+      if (!_disposed) notifyListeners();
+    }
+  }
+
+  AircraftRoute? get incomingRoute {
+    final route = incomingMapTarget?.aircraft?.route;
+    return route?.origin == null || route?.destination == null
+        ? null
+        : AircraftRoute(
+            origin: route!.origin!, destination: route.destination!);
+  }
+
+  void showIncomingOnMap(IncomingAircraft result) {
+    incomingMapTarget = result;
+    _selectedIcao24 = result.aircraft?.state.icao24;
+    _displayFilter = null;
+    _mapRoute = null;
+    notifyListeners();
+  }
+
+  void clearIncomingOnMap() {
+    incomingMapTarget = null;
+    notifyListeners();
+  }
 
   final AirportWeatherController weather;
   final DateTime Function() _clock;
@@ -145,6 +199,7 @@ class AppController extends ChangeNotifier {
   AircraftRoute? get mapRoute => _mapRoute;
 
   void showRoute(AircraftRoute route, {required bool onMap}) {
+    incomingMapTarget = null;
     _displayFilter = AircraftFilter(
         label: 'Route: ${route.label}',
         routeOrigin: route.origin,
@@ -156,6 +211,7 @@ class AppController extends ChangeNotifier {
   AircraftFilter? get displayFilter => _displayFilter;
 
   void setDisplayFilter(AircraftFilter? filter) {
+    incomingMapTarget = null;
     _displayFilter = filter;
     _mapRoute = null;
     notifyListeners();
@@ -316,6 +372,7 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> setTrackingCenter(TrackingCenter center) async {
+    incomingMapTarget = null;
     _trackingCenter = center;
     _alertEngine.resetBaseline();
     _foregroundNotice = null;
