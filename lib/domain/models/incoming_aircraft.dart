@@ -21,7 +21,8 @@ class IncomingAircraft {
       required this.state,
       required this.checkedAt,
       required this.evidence,
-      this.aircraft});
+      this.aircraft,
+      this.outboundCallsign});
   final String? outboundCallsign;
   final Airport airport;
   final String address;
