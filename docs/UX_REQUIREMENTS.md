@@ -120,3 +120,10 @@ Radar takes its screen layout from the supplied gadget reference, without a hard
 Tiles and aircraft/trails share a Web Mercator camera, including zoom, panning and antimeridian wrapping. Scale is nominal nautical miles at the scan centre latitude. Latitude is limited to the geographic tile projection. The existing replaceable tile source supplies both map screens, with visible linked attribution. Tile failures retain the aircraft overlay and dark/light scope background. No new aircraft-provider requests are made by pan/zoom. Existing scan bounds, manual refresh cooldown, theme choice, clickable scan location and detail navigation are retained.
 
 The HUD shows acquired filtered target count, actual feed state (or paused), and latest aircraft observation time in local time, not a fabricated live clock. The Map shortcut opens the existing Map tab.
+
+
+### Explicit search scope (V0.4.7)
+
+Search offers All available, Aircraft in scan area, and Worldwide reference. Worldwide reference covers airports, airlines and airport connections, never worldwide aircraft, schedules or guaranteed services. A coverage card identifies the scan centre/radius, acquired aircraft count, feed/pause state and dated observation time. Its refresh action shares the existing ten-second manual cooldown; typing and scope changes do not request data. Results use the latest acquired snapshot after a refresh. Searching does not apply a display filter; the separately labelled filter action remains explicit.
+
+No-match guidance distinguishes scan/coverage/missing identity limits from catalogue misses and explains unconnected commercial flight-number and incoming-aircraft lookup. It suggests known callsign/registration/ICAO24, refresh, scan-range changes or airport selection. Help explains different callsigns on successive legs. Registration, callsign and aircraft-address matching accept spaces/hyphens without converting airline codes. New submissions reset category selection so a stale category cannot hide another query's matches. Route/aircraft/airport navigation and drilldown lists remain available.

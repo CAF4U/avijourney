@@ -10,6 +10,8 @@ Use for ICAO24, callsign, latitude/longitude, altitude, velocity, track, vertica
 
 Use geographically bounded requests rather than global queries.
 
+Access/licensing review, 7 November 2026: current [OpenSky terms](https://opensky-network.org/about/terms-of-use) require a written agreement for operational REST API use and use by commercial entities. Confirm CAF4U's existing agreement before broader deployment; anonymous endpoint availability does not grant a production licence. See [incoming aircraft research](INCOMING_AIRCRAFT_DATA_RESEARCH.md).
+
 ### Free-first quota strategy
 
 - Default refresh: 60 seconds initially.

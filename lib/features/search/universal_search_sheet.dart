@@ -8,6 +8,8 @@ import '../../domain/models/aircraft_route.dart';
 import '../../domain/models/airport.dart';
 import '../../domain/models/followed_item.dart';
 import '../../domain/models/search_result.dart';
+import '../../domain/models/search_scope.dart';
+import '../../core/widgets/manual_refresh_button.dart';
 import '../../domain/models/tracked_aircraft.dart';
 import '../aircraft_detail/aircraft_detail_sheet.dart';
 import '../flight_detail/flight_detail_sheet.dart';
@@ -59,7 +61,10 @@ class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
     'A380 Emirates',
   ];
   final _query = TextEditingController();
-  List<SearchResult> _results = const [];
+  SearchScope _scope = SearchScope.all;
+  List<SearchResult> get _results => _hasSubmitted
+      ? widget.controller.search(_submittedQuery, scope: _scope)
+      : const [];
   bool _hasSubmitted = false;
   String _submittedQuery = "";
   SearchResult? _selection;
@@ -81,7 +86,7 @@ class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
       _hasSubmitted = true;
       _selection = null;
       _submittedQuery = query.trim();
-      _results = widget.controller.search(query);
+      _category = null;
     });
   }
 
@@ -92,6 +97,7 @@ class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
 
   Widget _contents(BuildContext context) {
     if (_selection != null) return _drilldown(_selection!);
+    final results = _results;
     final types = UniversalSearchService.routeCodes(_submittedQuery) == null
         ? SearchResultType.values
         : [
@@ -100,7 +106,7 @@ class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
           ];
     final grouped = <SearchResultType, List<SearchResult>>{};
     for (final result
-        in _results.where((r) => _category == null || r.type == _category)) {
+        in results.where((r) => _category == null || r.type == _category)) {
       grouped.putIfAbsent(result.type, () => []).add(result);
     }
     return Column(children: [
@@ -129,64 +135,165 @@ class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
               icon: const Icon(Icons.close)),
         ]),
       ),
-      if (_results.isNotEmpty)
-        SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(children: [
-              ChoiceChip(
-                  label: const Text('All'),
-                  selected: _category == null,
-                  onSelected: (_) => setState(() => _category = null)),
-              for (final type in SearchResultType.values)
-                Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: ChoiceChip(
-                        key: Key('searchCategory-${type.name}'),
-                        label: Text(
-                            '${_heading(type).toLowerCase()} (${_results.where((r) => r.type == type).length})'),
-                        selected: _category == type,
-                        onSelected: (_) => setState(() => _category = type))),
-            ])),
-      if (_hasSubmitted && _submittedQuery.isNotEmpty)
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: TextButton.icon(
-            key: const Key('filterSearchResults'),
-            onPressed: () => _applyFilter(AircraftFilter(
-                label: 'Search: $_submittedQuery', query: _submittedQuery)),
-            icon: const Icon(Icons.filter_alt),
-            label: const Text('Apply search as a display filter'),
-          ),
-        ),
-      Expanded(
-        child: _results.isNotEmpty && grouped.isEmpty
-            ? const Center(child: Text('No results in this category'))
-            : _results.isEmpty
-                ? _SearchGuidance(
-                    hasSubmitted: _hasSubmitted,
-                    examples: _examples,
-                    onExampleSelected: _submit,
-                  )
-                : ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                    children: [
-                      for (final type in types)
-                        if (grouped[type]?.isNotEmpty == true) ...[
-                          Padding(
-                            padding: const EdgeInsets.only(top: 16, bottom: 4),
-                            child: Text(_heading(type),
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.2)),
-                          ),
-                          ...grouped[type]!.map(_tile),
-                        ],
-                      const _CatalogAttribution(),
-                    ],
-                  ),
+      SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(children: [
+          for (final scope in SearchScope.values)
+            Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: ChoiceChip(
+                    key: Key('searchScope-${scope.name}'),
+                    label: Text(switch (scope) {
+                      SearchScope.all => 'All available',
+                      SearchScope.scanArea => 'Aircraft in scan area',
+                      SearchScope.worldwideReference => 'Worldwide reference',
+                    }),
+                    selected: _scope == scope,
+                    onSelected: (_) => setState(() {
+                          _scope = scope;
+                          _category = null;
+                        }))),
+        ]),
       ),
+      Expanded(
+          child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        children: [
+          _coverage(),
+          if (results.isNotEmpty)
+            SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(children: [
+                  ChoiceChip(
+                      label: const Text('All'),
+                      selected: _category == null,
+                      onSelected: (_) => setState(() => _category = null)),
+                  for (final type
+                      in SearchResultType.values.where(_scope.includes))
+                    Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: ChoiceChip(
+                            key: Key('searchCategory-${type.name}'),
+                            label: Text(
+                                '${_heading(type).toLowerCase()} (${results.where((r) => r.type == type).length})'),
+                            selected: _category == type,
+                            onSelected: (_) =>
+                                setState(() => _category = type))),
+                ])),
+          if (_hasSubmitted &&
+              _submittedQuery.isNotEmpty &&
+              _scope != SearchScope.worldwideReference)
+            TextButton.icon(
+                key: const Key('filterSearchResults'),
+                onPressed: () => _applyFilter(AircraftFilter(
+                    label: 'Search: $_submittedQuery', query: _submittedQuery)),
+                icon: const Icon(Icons.filter_alt),
+                label: const Text('Filter radar / map in this scan area')),
+          if (results.isNotEmpty && grouped.isEmpty)
+            Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(children: [
+                  const Text(
+                      'No results in this category. Other categories have matches.'),
+                  TextButton(
+                      onPressed: () => setState(() => _category = null),
+                      child: const Text('Show all results')),
+                ]))
+          else if (results.isEmpty)
+            _SearchGuidance(
+                hasSubmitted: _hasSubmitted,
+                query: _submittedQuery,
+                scope: _scope,
+                examples: _examples,
+                onExampleSelected: _submit)
+          else ...[
+            for (final type in types)
+              if (grouped[type]?.isNotEmpty == true) ...[
+                Padding(
+                    padding: const EdgeInsets.only(top: 16, bottom: 4),
+                    child: Text(_heading(type),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, letterSpacing: 1.2))),
+                ...grouped[type]!.map(_tile),
+              ],
+          ],
+          const _CatalogAttribution(),
+        ],
+      )),
     ]);
+  }
+
+  Widget _coverage() {
+    final controller = widget.controller;
+    final status = !controller.isActive
+        ? 'Paused'
+        : switch (controller.feedStatus) {
+            FeedStatus.connecting => 'Connecting',
+            FeedStatus.live => 'Live',
+            FeedStatus.cached => 'Cached / stale',
+            FeedStatus.offline => 'Offline',
+            FeedStatus.rateLimited => 'Rate limited',
+            FeedStatus.error => 'Feed error',
+          };
+    final observations = controller.aircraft.map((a) => a.state.observedAt);
+    final latest = observations.isEmpty
+        ? null
+        : observations.reduce((a, b) => a.isAfter(b) ? a : b).toLocal();
+    final time = latest == null
+        ? 'No aircraft observations yet'
+        : 'Observed ${latest.toIso8601String().substring(0, 10)} · ${latest.hour.toString().padLeft(2, '0')}:${latest.minute.toString().padLeft(2, '0')} local';
+    return Card(
+        key: const Key('searchCoverage'),
+        child: Padding(
+            padding: const EdgeInsets.all(12),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Expanded(
+                    child: Text(
+                        'Scan: ${controller.trackingCenter.label} · ${controller.settings.radarRangeNm} NM radius',
+                        style: const TextStyle(fontWeight: FontWeight.bold))),
+                ManualRefreshButton(controller: controller, surface: 'search'),
+                IconButton(
+                    key: const Key('searchCapabilities'),
+                    onPressed: () => showModalBottomSheet<void>(
+                        context: context,
+                        useSafeArea: true,
+                        isScrollControlled: true,
+                        builder: (_) => const SingleChildScrollView(
+                            padding: EdgeInsets.all(24),
+                            child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Flight search and incoming aircraft',
+                                      style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold)),
+                                  SizedBox(height: 12),
+                                  Text(
+                                      'Worldwide live aircraft lookup, flight schedules and automatic incoming-aircraft identification are not connected yet.'),
+                                  SizedBox(height: 8),
+                                  Text(
+                                      'If you already know the aircraft registration, ICAO24 address or current callsign, search it in the scan area. A departing flight and its incoming leg usually have different callsigns.'),
+                                  SizedBox(height: 8),
+                                  Text(
+                                      'Commercial flight numbers only match when verified data is available. We never convert an ATC callsign into a passenger flight number.'),
+                                  SizedBox(height: 8),
+                                  Text(
+                                      'To look elsewhere: search an airport and select it to move the scan. You can also change the scan location in settings. A wider scan range may find more aircraft; coverage and identity data can still be incomplete.'),
+                                ]))),
+                    icon: const Icon(Icons.info_outline, size: 18),
+                    tooltip: 'Flight numbers and incoming aircraft'),
+              ]),
+              Text('$status · ${controller.aircraft.length} acquired aircraft'),
+              Text(time, style: Theme.of(context).textTheme.bodySmall),
+              const SizedBox(height: 6),
+              const Text(
+                  'Aircraft: scan area only. Airports, airlines, routes: worldwide reference.',
+                  style: TextStyle(fontSize: 12)),
+            ])));
   }
 
   Widget _tile(SearchResult result) {
@@ -442,57 +549,77 @@ class _UniversalSearchSheetState extends State<_UniversalSearchSheet> {
 }
 
 class _SearchGuidance extends StatelessWidget {
-  const _SearchGuidance({
-    required this.hasSubmitted,
-    required this.examples,
-    required this.onExampleSelected,
-  });
-
+  const _SearchGuidance(
+      {required this.hasSubmitted,
+      required this.query,
+      required this.scope,
+      required this.examples,
+      required this.onExampleSelected});
   final bool hasSubmitted;
+  final String query;
+  final SearchScope scope;
   final List<String> examples;
   final ValueChanged<String> onExampleSelected;
 
   @override
-  Widget build(BuildContext context) => SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+  Widget build(BuildContext context) {
+    final flightNumber =
+        RegExp(r'^[A-Z0-9]{2}\s*\d{1,4}[A-Z]?$', caseSensitive: false)
+            .hasMatch(query.trim());
+    return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20),
         child: Column(children: [
           Icon(hasSubmitted ? Icons.search_off : Icons.travel_explore,
-              size: 44, color: Theme.of(context).colorScheme.primary),
+              size: 40),
           const SizedBox(height: 12),
           Text(
-            hasSubmitted
-                ? 'No matching results. Try another example.'
-                : 'Search live aircraft and flights, or discover airports and airlines worldwide.',
-            textAlign: TextAlign.center,
-          ),
+              !hasSubmitted || query.isEmpty
+                  ? 'Choose a search scope and enter an aircraft, airport, airline or route.'
+                  : scope == SearchScope.worldwideReference
+                      ? 'No reference match for "$query".'
+                      : scope == SearchScope.scanArea
+                          ? 'No acquired aircraft match for "$query" in this scan area.'
+                          : 'No acquired aircraft or reference match for "$query".',
+              textAlign: TextAlign.center),
           const SizedBox(height: 8),
-          Text(
-            'Live aircraft results use the current radar area. Airport and airline results come from the global discovery catalog.',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          const SizedBox(height: 20),
+          if (hasSubmitted && query.isNotEmpty) ...[
+            if (scope != SearchScope.worldwideReference) ...[
+              const Text(
+                  'No match does not mean the aircraft is not flying. It may be outside the scan area, missing from provider coverage, or lack registration / route information.',
+                  textAlign: TextAlign.center),
+              if (flightNumber)
+                const Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Text(
+                        'This looks like a commercial flight number. Verified flight-number lookup is not connected. Try the current callsign, registration or ICAO24 address; these search only acquired aircraft.',
+                        textAlign: TextAlign.center)),
+              const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text(
+                      'Try refreshing, increasing the scan range, or searching an airport to move the scan.',
+                      textAlign: TextAlign.center)),
+            ] else
+              const Text(
+                  'This scope searches airports, airlines and airport connections, not live aircraft or schedules. Use airport codes such as ALC-BRS for a route; some airports may be absent from the catalogue.',
+                  textAlign: TextAlign.center),
+          ],
+          const SizedBox(height: 16),
           const Text('TRY AN EXAMPLE',
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2)),
-          const SizedBox(height: 8),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
           Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 8,
-            runSpacing: 4,
-            children: examples
-                .map((example) => ActionChip(
+              alignment: WrapAlignment.center,
+              spacing: 8,
+              runSpacing: 4,
+              children: (scope == SearchScope.worldwideReference
+                      ? ['ALC', 'LHR → LAX', 'British Airways']
+                      : examples)
+                  .map((example) => ActionChip(
                       key: Key('searchExample-$example'),
                       label: Text(example),
-                      onPressed: () => onExampleSelected(example),
-                    ))
-                .toList(growable: false),
-          ),
-          const _CatalogAttribution(),
-        ]),
-      );
+                      onPressed: () => onExampleSelected(example)))
+                  .toList()),
+        ]));
+  }
 }
 
 class _CatalogAttribution extends StatelessWidget {

@@ -2,6 +2,7 @@ import '../../domain/models/airline.dart';
 import '../../domain/models/airport.dart';
 import '../../domain/models/aircraft_route.dart';
 import '../../domain/models/search_result.dart';
+import '../../domain/models/search_scope.dart';
 import '../../domain/models/tracked_aircraft.dart';
 
 class UniversalSearchService {
@@ -9,6 +10,7 @@ class UniversalSearchService {
 
   List<SearchResult> search({
     required String query,
+    SearchScope scope = SearchScope.all,
     required Iterable<TrackedAircraft> aircraft,
     required Iterable<Airline> airlines,
     required Iterable<Airport> airports,
@@ -88,7 +90,7 @@ class UniversalSearchService {
             tracked.identity?.model ?? tracked.identity?.typeCode,
             airline?.name ?? tracked.identity?.operatorName,
           ].whereType<String>().join(' · '),
-          matchReason: 'Matched live aircraft identity, operator or route',
+          matchReason: 'Matched acquired aircraft identity, operator or route',
           value: tracked,
         ));
         results.add(SearchResult(
@@ -109,7 +111,7 @@ class UniversalSearchService {
             type: SearchResultType.route,
             identifier: key,
             title: routeLabel!,
-            subtitle: airline?.name ?? 'Known live route',
+            subtitle: airline?.name ?? 'Known acquired route',
             matchReason: 'Matched origin and destination',
             value: AircraftRoute(origin: origin, destination: destination),
           ));
@@ -159,7 +161,7 @@ class UniversalSearchService {
         ));
       }
     }
-    return results;
+    return results.where((r) => scope.includes(r.type)).toList(growable: false);
   }
 
   static (String, String)? routeCodes(String query) {
@@ -189,7 +191,15 @@ class UniversalSearchService {
         .whereType<String>()
         .map((field) => field.toUpperCase().replaceAll(RegExp(r'\s+'), ' '))
         .join(' ');
-    return tokens.every(haystack.contains);
+    if (tokens.every(haystack.contains)) return true;
+    // Accept registrations/callsigns with or without separators, e.g.
+    // 9H-VUA / 9HVUA and RYR 91RL / RYR91RL. Never transform airline codes.
+    final compact = tokens.join().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+    return compact.length >= 3 &&
+        fields.whereType<String>().any((field) => field
+            .toUpperCase()
+            .replaceAll(RegExp(r'[^A-Z0-9]'), '')
+            .contains(compact));
   }
 
   static Airline? _airlineFor(String callsign, List<Airline> airlines) {

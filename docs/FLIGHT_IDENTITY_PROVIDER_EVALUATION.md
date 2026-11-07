@@ -2,6 +2,8 @@
 
 Reviewed: 28 October 2026
 
+Update, 7 November 2026: see [Incoming aircraft data research](INCOMING_AIRCRAFT_DATA_RESEARCH.md) for the newer assignment/inbound comparison. It identifies the Standard-tier mixed-provider restriction as well as the Personal restriction, the public FR24 API schedule gap, and current OpenSky operational-licensing requirements. These newer findings supersede conflicting access/licensing assumptions below.
+
 ## Decision
 
 No commercial-flight identity provider is enabled in the Android application.

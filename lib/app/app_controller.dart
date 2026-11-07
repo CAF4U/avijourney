@@ -15,6 +15,7 @@ import '../domain/models/app_settings.dart';
 import '../domain/models/tracked_aircraft.dart';
 import '../domain/models/followed_item.dart';
 import '../domain/models/search_result.dart';
+import '../domain/models/search_scope.dart';
 import '../data/local/static_airline_catalog.dart';
 import 'search/universal_search_service.dart';
 import 'discovery/operator_reference_resolver.dart';
@@ -401,8 +402,11 @@ class AppController extends ChangeNotifier {
   List<Airport> searchAirports(String query) =>
       _airportSearchProvider?.search(query) ?? const [];
 
-  List<SearchResult> search(String query) => _searchService.search(
+  List<SearchResult> search(String query,
+          {SearchScope scope = SearchScope.all}) =>
+      _searchService.search(
         query: query,
+        scope: scope,
         aircraft: _aircraft,
         airlines: _airlineSearchProvider.airlines,
         airports: [
